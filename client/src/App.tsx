@@ -95,6 +95,13 @@ function App() {
     setEditingId(editedCompany.id);
   }
 
+  function handleCancel(){
+    setName('');
+    setNotes('');
+    setWebsite('');
+    setEditingId(null);
+  }
+
   // arrow function for delete waits for an acutal click
   return (
     <div>
@@ -112,7 +119,8 @@ function App() {
         <input value={name} onChange={(e) => setName(e.target.value)}/>
         <input value={website} onChange={(e) => setWebsite(e.target.value)}/>
         <input value={notes} onChange={(e) => setNotes(e.target.value)}/>
-        <button type="submit">Add Company</button>
+        <button type="submit">{editingId === null ? "Add Company" : "Save Changes"}</button>
+        {editingId !== null && <button type="button" onClick={() => handleCancel()}>Cancel</button>}
       </form>
 
 
