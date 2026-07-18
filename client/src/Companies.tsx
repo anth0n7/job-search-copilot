@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { Company } from './types';
 
 interface CompaniesProps {
@@ -9,8 +9,8 @@ interface CompaniesProps {
 function Companies({companies, setCompanies}: CompaniesProps){
     const [name, setName] = useState('');
     const [website, setWebsite] = useState('');
-    const[notes, setNotes] = useState('');
-    const[editingId, setEditingId] = useState<number | null>(null);
+    const [notes, setNotes] = useState('');
+    const [editingId, setEditingId] = useState<number | null>(null);
 
     //map means loop through every item in the array. The format has to look like this.
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
@@ -21,7 +21,12 @@ function Companies({companies, setCompanies}: CompaniesProps){
         headers: {'Content-Type' : 'application/json'},
         body: JSON.stringify({name, website, notes}),
       })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+            throw new Error('Request failed');
+        }
+            return response.json();
+        })
       .then((editedCompany) => {
         setCompanies(companies.map((currentCompany) => (
           currentCompany.id === editingId ? editedCompany : currentCompany
@@ -37,7 +42,12 @@ function Companies({companies, setCompanies}: CompaniesProps){
         headers: {'Content-Type' : 'application/json'},
         body: JSON.stringify({name, website, notes}),
       })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+            throw new Error('Request failed');
+        }
+            return response.json();
+        })
       .then((company) =>{
         setCompanies([company, ...companies]);
       })
@@ -56,7 +66,12 @@ function Companies({companies, setCompanies}: CompaniesProps){
     fetch(`http://localhost:3001/companies/${deletedID}`, {
       method: 'DELETE',
     })
-    .then((response) => response.json())
+    .then((response) => {
+        if (!response.ok) {
+            throw new Error('Request failed');
+        }
+            return response.json();
+        })
     .then(() => {
       setCompanies(companies.filter((keptCompany) => keptCompany.id !== deletedID));
       if(editingId === deletedID){
@@ -96,9 +111,15 @@ function Companies({companies, setCompanies}: CompaniesProps){
             </ul>
             
             <form onSubmit={handleSubmit}>
-                <input value={name} onChange={(e) => setName(e.target.value)}/>
-                <input value={website} onChange={(e) => setWebsite(e.target.value)}/>
-                <input value={notes} onChange={(e) => setNotes(e.target.value)}/>
+                <label htmlFor="name">Name</label>
+                <input id="name" value={name} onChange={(e) => setName(e.target.value)}/>
+
+                <label htmlFor="website">Website</label>
+                <input id="website" value={website} onChange={(e) => setWebsite(e.target.value)}/>
+
+                <label htmlFor="notes">Notes</label>
+                <input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)}/>
+
                 <button type="submit">{editingId === null ? "Add Company" : "Save Changes"}</button>
                 {editingId !== null && <button type="button" onClick={() => handleCancel()}>Cancel</button>}
             </form>
