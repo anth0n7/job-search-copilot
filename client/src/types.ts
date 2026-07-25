@@ -16,3 +16,13 @@ export interface Application {
     created_at: string;
     updated_at: string;
 }
+
+export interface Contact {
+    id: number;
+    company_id: number;
+    name: string;
+    role: string | null;
+    email: string | null;
+    linkedin_url: string | null;
+    notes: string | null;
+}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Company } from './types';
 import Companies from './Companies';
 import Applications from './Applications';
+import Contacts from './Contacts';
 
 
 //lifting state up: when two or more components need the same piece of state
@@ -13,7 +14,12 @@ function App() {
 
   useEffect(() =>{
     fetch('http://localhost:3001/companies')
-    .then((response) => response.json())
+    .then((response) =>{
+      if(!response.ok){
+        throw new Error('Response failed');
+      }
+      return response.json()        
+    })
     .then((data) =>{
       setCompanies(data);
     })
@@ -28,6 +34,7 @@ function App() {
       <h1>Job Search Copilot</h1>
       <Companies companies={companies} setCompanies={setCompanies} />
       <Applications companies={companies} />
+      <Contacts companies={companies} />
     </div>
   );
 }
