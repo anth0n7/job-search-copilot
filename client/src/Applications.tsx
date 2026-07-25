@@ -1,35 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { Company, Application} from './types';
  
 
 interface ApplicationsProps {
-    companies: Company[]
+    companies: Company[];
+    applications: Application [];
+    setApplications:  React.Dispatch<React.SetStateAction<Application[]>>;
 }
 
-function Applications({companies}: ApplicationsProps){
-    const [applications, setApplications] = useState<Application[]>([]);
+function Applications({companies, applications, setApplications}: ApplicationsProps){
     const [role_title, setRoleTitle] = useState('');
     const [job_posting_url, setJobUrl] = useState('');
     const [status, setStatus] = useState('');
     const [application_date, setApplicationDate] = useState('');
     const [company_id, setCompanyId] = useState<number | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
-
-    useEffect(() =>{
-        fetch('http://localhost:3001/applications')
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error('Request failed');
-            }
-            return response.json();
-        })
-        .then((data) =>{
-            setApplications(data);
-        })
-        .catch((err) =>{
-            console.error('Failed to fetch applications', err);
-        })
-    }, []);
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
         e.preventDefault();

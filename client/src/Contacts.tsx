@@ -140,31 +140,31 @@ function Contacts({companies}: ContactsProps){
             </ul>
 
             <form onSubmit={handleSubmit}>
-              <label htmlFor="name">Name</label>
-              <input id="name" value={name} onChange={(e) => setName(e.target.value)}/>
+                <label htmlFor="name">Name</label>
+                <input id="name" value={name} onChange={(e) => setName(e.target.value)}/>
 
-            <label htmlFor="role">Role</label>
-            <input id="role" value={role} onChange={(e) => setRole(e.target.value)}/>
+                <label htmlFor="role">Role</label>
+                <input id="role" value={role} onChange={(e) => setRole(e.target.value)}/>
 
-            <label htmlFor="email">Email</label>
-            <input id="email" value={email} type="email" onChange={(e) => setEmail(e.target.value)}/>
+                <label htmlFor="email">Email</label>
+                <input id="email" value={email} type="email" onChange={(e) => setEmail(e.target.value)}/>
 
-            <label htmlFor="linkedin_url">LinkedIn URL</label>
-            <input id="linkedin_url" value={linkedin_url} type="url" onChange={(e) => setLinkedinUrl(e.target.value)}/>
+                <label htmlFor="linkedin_url">LinkedIn URL</label>
+                <input id="linkedin_url" value={linkedin_url} type="url" onChange={(e) => setLinkedinUrl(e.target.value)}/>
 
-            <label htmlFor="notes">Notes</label>
-            <input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)}/>
+                <label htmlFor="notes">Notes</label>
+                <input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)}/>
 
-            <select value={company_id ?? ''} onChange={(e) => setCompanyId(Number(e.target.value))} required>
-               <option value="" disabled>Select a company...</option> 
-               {companies.map((company) =>(
-                <option key={company.id} value={company.id}>{company.name}</option>
-               ))}
-            </select>
+                <select value={company_id ?? ''} onChange={(e) => setCompanyId(Number(e.target.value))} required>
+                <option value="" disabled>Select a company...</option> 
+                {companies.map((company) =>(
+                    <option key={company.id} value={company.id}>{company.name}</option>
+                ))}
+                </select>
 
-            <button type="submit">{editingId === null ? "Add Contact" : "Save Changes"}</button> 
+                <button type="submit">{editingId === null ? "Add Contact" : "Save Changes"}</button> 
 
-            {editingId !== null && <button type="button" onClick={() => handleCancel()}>Cancel</button>}
+                {editingId !== null && <button type="button" onClick={() => handleCancel()}>Cancel</button>}
             </form>
             
         </div>

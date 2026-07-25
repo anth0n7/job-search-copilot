@@ -26,3 +26,12 @@ export interface Contact {
     linkedin_url: string | null;
     notes: string | null;
 }
+
+export interface InterviewStage {
+    id: number;
+    application_id: number;
+    stage_name: string;
+    scheduled_date: string | null;
+    completed: boolean | null;
+    notes: string | null;
+}
