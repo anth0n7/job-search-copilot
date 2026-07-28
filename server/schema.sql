@@ -3,6 +3,7 @@ DROP TABLE IF EXISTS interview_stages, contacts,
 
 CREATE TABLE companies (
   id SERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL,
   name TEXT NOT NULL,
   website TEXT,
   notes TEXT,

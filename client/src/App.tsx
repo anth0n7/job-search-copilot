@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { Show, SignInButton, SignUpButton, UserButton} from '@clerk/react';
 import type { Company, Application } from './types';
 import Companies from './Companies';
 import Applications from './Applications';
 import Contacts from './Contacts';
 import InterviewStages from './InterviewStages';
+
 
 
 //lifting state up: when two or more components need the same piece of state
@@ -46,9 +48,17 @@ function App() {
         })
     }, []);
 
-
+  // show when is clerks way of conditionally rendering
   return (
     <div>
+      <Show when="signed-out">
+        <SignInButton mode="modal" />
+        <SignUpButton mode="modal" />
+      </Show>
+      <Show when="signed-in">
+        <UserButton />
+      </Show>
+
       <h1>Job Search Copilot</h1>
       <Companies companies={companies} setCompanies={setCompanies} />
       <Applications companies={companies} applications={applications} setApplications={setApplications}/>
