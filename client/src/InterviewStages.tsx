@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { InterviewStage, Company, Application } from './types';
+import { useAuth } from '@clerk/react';
 
 interface InterviewStagesProps{
     companies: Company [];
@@ -14,26 +15,12 @@ function InterviewStages({companies, applications} : InterviewStagesProps){
     const [completed, setCompleted] = useState<boolean>(false);
     const [notes, setNotes] = useState('');
     const [editingId, setEditingId] = useState<number | null>(null);
+    const { getToken } = useAuth();
 
     useEffect(() => {
-      fetch('http://localhost:3001/interview_stages')
-      .then((response) => {
-        if(!response.ok){
-            throw new Error('Response failed');
-        }
-        return response.json()
-      })
-      .then((data) => {
-        setInterviewStages(data);
-      })
-      .catch((err) =>{
-        console.error("Failed to fetch interview stages:", err);
-      })
-    } , []);
-
-    function handleDelete(deletedId: number){
-        fetch(`http://localhost:3001/interview_stages/${deletedId}`, {
-            method: 'DELETE',
+      getToken().then((token) => {  
+        fetch('http://localhost:3001/interview_stages', {
+            headers: {Authorization: `Bearer ${token}`},
         })
         .then((response) => {
             if(!response.ok){
@@ -41,15 +28,37 @@ function InterviewStages({companies, applications} : InterviewStagesProps){
             }
             return response.json()
         })
-        .then(() => {
-            setInterviewStages(interview_stages.filter((current_interview_stage) => current_interview_stage.id !== deletedId));
-            if(editingId === deletedId){
-                setEditingId(null);
-            }
+        .then((data) => {
+            setInterviewStages(data);
         })
-        .catch((err) => {
-            console.error('Failed to fetch interview stages:', err);
-        }) 
+        .catch((err) =>{
+            console.error("Failed to fetch interview stages:", err);
+        })
+    });
+    } , []);
+
+    function handleDelete(deletedId: number){
+        getToken().then((token) => { 
+            fetch(`http://localhost:3001/interview_stages/${deletedId}`, {
+                method: 'DELETE',
+                headers: {Authorization: `Bearer ${token}`},
+            })
+            .then((response) => {
+                if(!response.ok){
+                    throw new Error('Response failed');
+                }
+                return response.json()
+            })
+            .then(() => {
+                setInterviewStages(interview_stages.filter((current_interview_stage) => current_interview_stage.id !== deletedId));
+                if(editingId === deletedId){
+                    setEditingId(null);
+                }
+            })
+            .catch((err) => {
+                console.error('Failed to fetch interview stages:', err);
+            }) 
+        });
     }
 
     function handleEdit(editedInterviewStage: InterviewStage){
@@ -65,44 +74,54 @@ function InterviewStages({companies, applications} : InterviewStagesProps){
         e.preventDefault();
         const dateToSend = scheduled_date === '' ? null : scheduled_date;
         if(editingId !== null){
-            fetch(`http://localhost:3001/interview_stages/${editingId}`,{
-                method: 'PUT',
-                headers: {'Content-Type' : 'application/json'},
-                body: JSON.stringify({application_id, completed, notes, scheduled_date: dateToSend, stage_name})
-            })
-            .then((response) =>{
-                if(!response.ok){
-                    throw new Error('Response failed');
-                }
-                return response.json();
-            })
-            .then((editedInterviewStage) =>{
-               setInterviewStages(interview_stages.map((current_interview_stage) =>(
-                current_interview_stage.id === editingId ? editedInterviewStage : current_interview_stage
-               ))); 
-            })
-            .catch((err) =>{
-                console.error('Failed to fetch interview stages:', err);
-            })
+            getToken().then((token) => { 
+                fetch(`http://localhost:3001/interview_stages/${editingId}`,{
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type' : 'application/json',
+                         Authorization: `Bearer ${token}`,   
+                    },
+                    body: JSON.stringify({application_id, completed, notes, scheduled_date: dateToSend, stage_name})
+                })
+                .then((response) =>{
+                    if(!response.ok){
+                        throw new Error('Response failed');
+                    }
+                    return response.json();
+                })
+                .then((editedInterviewStage) =>{
+                setInterviewStages(interview_stages.map((current_interview_stage) =>(
+                    current_interview_stage.id === editingId ? editedInterviewStage : current_interview_stage
+                ))); 
+                })
+                .catch((err) =>{
+                    console.error('Failed to fetch interview stages:', err);
+                })
+            });
         }
         else{
-            fetch('http://localhost:3001/interview_stages', {
-                method: 'POST',
-                headers: {'Content-Type' : 'application/json'},
-                body: JSON.stringify({application_id, completed, notes, scheduled_date: dateToSend, stage_name})
-            })
-            .then((response) =>{
-                if(!response.ok){
-                    throw new Error('Response failed');
-                }
-                return response.json();
-            })    
-            .then((interview_stage) =>{
-                setInterviewStages([interview_stage, ...interview_stages]);
-            })
-            .catch((err) =>{
-                console.error('Failed to fetch interview stages:', err);
-            })
+            getToken().then((token) => {
+                fetch('http://localhost:3001/interview_stages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type' : 'application/json',
+                         Authorization: `Bearer ${token}`,   
+                    },
+                    body: JSON.stringify({application_id, completed, notes, scheduled_date: dateToSend, stage_name})
+                })
+                .then((response) =>{
+                    if(!response.ok){
+                        throw new Error('Response failed');
+                    }
+                    return response.json();
+                })    
+                .then((interview_stage) =>{
+                    setInterviewStages([interview_stage, ...interview_stages]);
+                })
+                .catch((err) =>{
+                    console.error('Failed to fetch interview stages:', err);
+                })
+            });
         }
         setApplicationId(null);
         setCompleted(false);

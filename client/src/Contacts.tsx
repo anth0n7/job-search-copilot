@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Company, Contact } from './types';
+import { useAuth } from '@clerk/react';
 
 interface ContactsProps{
     companies: Company[]
@@ -16,64 +17,79 @@ function Contacts({companies}: ContactsProps){
     const [linkedin_url, setLinkedinUrl] = useState('');
     const [notes, setNotes] = useState('');
     const [editingId, setEditingId] = useState<number | null>(null);
+    const { getToken } = useAuth();
 
     useEffect(() =>{
-        fetch('http://localhost:3001/contacts')
-        .then((response) =>{
-            if(!response.ok){
-              throw new Error('Response failed');
-            }
-            return response.json();       
-        })
-        .then((data) =>{
-            setContacts(data);
-        })
-        .catch((err) => {
-            console.error('Failed to fetch contacts', err);
-        })
+        getToken().then((token) => {
+            fetch('http://localhost:3001/contacts', {
+                headers: {Authorization: `Bearer ${token}`},
+            })
+            .then((response) =>{
+                if(!response.ok){
+                throw new Error('Response failed');
+                }
+                return response.json();       
+            })
+            .then((data) =>{
+                setContacts(data);
+            })
+            .catch((err) => {
+                console.error('Failed to fetch contacts', err);
+            })
+        });
     }, []);
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
         e.preventDefault();
         if(editingId !== null){
-            fetch(`http://localhost:3001/contacts/${editingId}`,{
-                method: 'PUT',
-                headers: {'Content-Type' : 'application/json'},
-                body: JSON.stringify({name, role, email, linkedin_url, notes, company_id})
-            })
-            .then((response) =>{
-                if(!response.ok){
-                    throw new Error('Response failed');
-                }
-                return response.json();
-            })
-            .then((editedContact) =>{
-               setContacts(contacts.map((currentContact) =>(
-                currentContact.id === editingId ? editedContact : currentContact
-               ))); 
-            })
-            .catch((err) =>{
-                console.error('Failed to fetch contact:', err);
-            })
+            getToken().then((token) => {
+                fetch(`http://localhost:3001/contacts/${editingId}`,{
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type' : 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({name, role, email, linkedin_url, notes, company_id})
+                })
+                .then((response) =>{
+                    if(!response.ok){
+                        throw new Error('Response failed');
+                    }
+                    return response.json();
+                })
+                .then((editedContact) =>{
+                setContacts(contacts.map((currentContact) =>(
+                    currentContact.id === editingId ? editedContact : currentContact
+                ))); 
+                })
+                .catch((err) =>{
+                    console.error('Failed to fetch contact:', err);
+                })
+            });
         }
         else{
-            fetch('http://localhost:3001/contacts', {
-                method: 'POST',
-                headers: {'Content-Type' : 'application/json'},
-                body: JSON.stringify({name, role, email, linkedin_url, notes, company_id})
-            })
-            .then((response) =>{
-                if(!response.ok){
-                    throw new Error('Response failed');
-                }
-                return response.json();
-            })    
-            .then((contact) =>{
-                setContacts([contact, ...contacts]);
-            })
-            .catch((err) =>{
-                console.error('Failed to fetch contact:', err);
-            })
+            getToken().then((token) => {
+                fetch('http://localhost:3001/contacts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type' : 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({name, role, email, linkedin_url, notes, company_id})
+                })
+                .then((response) =>{
+                    if(!response.ok){
+                        throw new Error('Response failed');
+                    }
+                    return response.json();
+                })    
+                .then((contact) =>{
+                    setContacts([contact, ...contacts]);
+                })
+                .catch((err) =>{
+                    console.error('Failed to fetch contact:', err);
+                })
+            });
         }
         setCompanyId(null);
         setEmail('');
@@ -85,24 +101,27 @@ function Contacts({companies}: ContactsProps){
     }
 
     function handleDelete(deletedId: number){
-        fetch(`http://localhost:3001/contacts/${deletedId}`,{
-            method: 'DELETE',
-        })
-        .then((response) =>{
-            if(!response.ok){
-                throw new Error('Request failed');
+        getToken().then((token) => {
+            fetch(`http://localhost:3001/contacts/${deletedId}`,{
+                method: 'DELETE',
+                headers: {Authorization: `Bearer ${token}`},
+            })
+            .then((response) =>{
+                if(!response.ok){
+                    throw new Error('Request failed');
+                }
+                return response.json();
+            })
+            .then(() =>{
+            setContacts(contacts.filter((currentContact) => currentContact.id !== deletedId));  
+            if (editingId === deletedId){
+                setEditingId(null);
             }
-            return response.json();
-        })
-        .then(() =>{
-          setContacts(contacts.filter((currentContact) => currentContact.id !== deletedId));  
-          if (editingId === deletedId){
-            setEditingId(null);
-          }
-        })
-        .catch((err) =>{
-           console.error('Failed to fetch contact:', err); 
-        })
+            })
+            .catch((err) =>{
+            console.error('Failed to fetch contact:', err); 
+            })
+        });
     }
 
     function handleEdit(editedContact: Contact){

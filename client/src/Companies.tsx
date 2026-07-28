@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Company } from './types';
+import { useAuth } from '@clerk/react';
 
 interface CompaniesProps {
     companies : Company [];
@@ -11,49 +12,60 @@ function Companies({companies, setCompanies}: CompaniesProps){
     const [website, setWebsite] = useState('');
     const [notes, setNotes] = useState('');
     const [editingId, setEditingId] = useState<number | null>(null);
+    const { getToken } = useAuth();
 
     //map means loop through every item in the array. The format has to look like this.
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
     e.preventDefault();
     if(editingId !== null){
-      fetch(`http://localhost:3001/companies/${editingId}`,{
-        method: 'PUT',
-        headers: {'Content-Type' : 'application/json'},
-        body: JSON.stringify({name, website, notes}),
-      })
-      .then((response) => {
-        if (!response.ok) {
-            throw new Error('Request failed');
-        }
-            return response.json();
-        })
-      .then((editedCompany) => {
-        setCompanies(companies.map((currentCompany) => (
-          currentCompany.id === editingId ? editedCompany : currentCompany
-        )));
-      })
-      .catch((err) => {
-        console.error('Failed to fetch company:', err);
-      })
+        getToken().then((token) => {  
+            fetch(`http://localhost:3001/companies/${editingId}`,{
+                method: 'PUT',
+                headers: {
+                    'Content-Type' : 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({name, website, notes}),
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Request failed');
+                }
+                    return response.json();
+                })
+            .then((editedCompany) => {
+                setCompanies(companies.map((currentCompany) => (
+                currentCompany.id === editingId ? editedCompany : currentCompany
+                )));
+            })
+            .catch((err) => {
+                console.error('Failed to fetch company:', err);
+            })
+        });
     }
     else{
-      fetch('http://localhost:3001/companies', {
-        method: 'POST',
-        headers: {'Content-Type' : 'application/json'},
-        body: JSON.stringify({name, website, notes}),
-      })
-      .then((response) => {
-        if (!response.ok) {
-            throw new Error('Request failed');
-        }
-            return response.json();
-        })
-      .then((company) =>{
-        setCompanies([company, ...companies]);
-      })
-      .catch((err) => {
-        console.error('Failed to fetch company:', err);
-      })
+        getToken().then((token) => { 
+            fetch('http://localhost:3001/companies', {
+                method: 'POST',
+                headers: {
+                    'Content-Type' : 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({name, website, notes}),
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Request failed');
+                }
+                    return response.json();
+                })
+            .then((company) =>{
+                setCompanies([company, ...companies]);
+            })
+            .catch((err) => {
+                console.error('Failed to fetch company:', err);
+            })
+    });
   }
 
     setName('');
@@ -63,24 +75,27 @@ function Companies({companies, setCompanies}: CompaniesProps){
   }
 
   function handleDelete(deletedID: number){
-    fetch(`http://localhost:3001/companies/${deletedID}`, {
-      method: 'DELETE',
-    })
-    .then((response) => {
-        if (!response.ok) {
-            throw new Error('Request failed');
-        }
-            return response.json();
+    getToken().then((token) => { 
+        fetch(`http://localhost:3001/companies/${deletedID}`, {
+            method: 'DELETE',
+            headers: {Authorization: `Bearer ${token}`},
         })
-    .then(() => {
-      setCompanies(companies.filter((keptCompany) => keptCompany.id !== deletedID));
-      if(editingId === deletedID){
-      setEditingId(null);
-    }
-    })
-    .catch((err) => {
-      console.error('Failed to fetch company:', err);
-    })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Request failed');
+            }
+                return response.json();
+            })
+        .then(() => {
+            setCompanies(companies.filter((keptCompany) => keptCompany.id !== deletedID));
+        if(editingId === deletedID){
+            setEditingId(null);
+        }
+        })
+        .catch((err) => {
+            console.error('Failed to fetch company:', err);
+        })
+    });
   }
 
   //just brings company information to be edited

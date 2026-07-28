@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Show, SignInButton, SignUpButton, UserButton} from '@clerk/react';
+import { Show, SignInButton, SignUpButton, UserButton, useAuth} from '@clerk/react';
 import type { Company, Application } from './types';
 import Companies from './Companies';
 import Applications from './Applications';
 import Contacts from './Contacts';
 import InterviewStages from './InterviewStages';
+
 
 
 
@@ -14,38 +15,48 @@ import InterviewStages from './InterviewStages';
 function App() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
+  //useAuth() returns an object with several things on it
+  const { getToken } = useAuth();
 
-
+  //get token returns a promise (async). Fetch can't run until getToken resolves
   useEffect(() =>{
-    fetch('http://localhost:3001/companies')
-    .then((response) =>{
-      if(!response.ok){
-        throw new Error('Response failed');
-      }
-      return response.json()        
-    })
-    .then((data) =>{
-      setCompanies(data);
-    })
-    .catch((err) => {
-      console.error('Failed to fetch companies:', err);
-    })
+    getToken().then((token) => {
+      fetch('http://localhost:3001/companies', {
+        headers: {Authorization: `Bearer ${token}`},
+      })
+      .then((response) =>{
+        if(!response.ok){
+          throw new Error('Response failed');
+        }
+        return response.json()        
+      })
+      .then((data) =>{
+        setCompanies(data);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch companies:', err);
+      })
+    });
   }, []);
 
   useEffect(() =>{
-        fetch('http://localhost:3001/applications')
+    getToken().then((token) => {
+      fetch('http://localhost:3001/applications', {
+        headers: {Authorization: `Bearer ${token}`},
+      })
         .then((response) => {
-            if (!response.ok) {
-                throw new Error('Request failed');
-            }
+          if (!response.ok) {
+            throw new Error('Request failed');
+          }
             return response.json();
-        })
-        .then((data) =>{
+          })
+          .then((data) =>{
             setApplications(data);
-        })
-        .catch((err) =>{
+          })
+          .catch((err) =>{
             console.error('Failed to fetch applications', err);
-        })
+          })
+      });
     }, []);
 
   // show when is clerks way of conditionally rendering
