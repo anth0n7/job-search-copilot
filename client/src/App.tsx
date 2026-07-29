@@ -61,7 +61,7 @@ function App() {
 
   // show when is clerks way of conditionally rendering
   return (
-    <div>
+    <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
       <Show when="signed-out">
         <SignInButton mode="modal" />
         <SignUpButton mode="modal" />
@@ -70,7 +70,7 @@ function App() {
         <UserButton />
       </Show>
 
-      <h1>Job Search Copilot</h1>
+      <h1 className="text-2xl font-bold text-gray-100 mb-5">Job Search Copilot</h1>
       <Companies companies={companies} setCompanies={setCompanies} />
       <Applications companies={companies} applications={applications} setApplications={setApplications}/>
       <Contacts companies={companies} />

@@ -148,42 +148,45 @@ function Contacts({companies}: ContactsProps){
 
 
     return(
-        <div>
-            <ul>
+        <div className="mb-5">
+            <ul className="max-w-md mx-auto space-y-2">
               {contacts.map((contact) =>(
-                <li key={contact.id}>{contact.name}
-                <button onClick={() => handleDelete(contact.id)}>Delete</button>
-                <button onClick={() => handleEdit(contact)}>Edit</button>
+                <li className="flex items-center justify-between bg-gray-800 rounded-lg p-4" key={contact.id}>{contact.name}
+                <div className="flex gap-2">
+                    <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={() => handleDelete(contact.id)}>Delete</button>
+                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" onClick={() => handleEdit(contact)}>Edit</button>
+                </div>
                 </li>  
               ))}
             </ul>
 
-            <form onSubmit={handleSubmit}>
-                <label htmlFor="name">Name</label>
-                <input id="name" value={name} onChange={(e) => setName(e.target.value)}/>
+            <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-gray-800 rounded-lg p-4 mt-4 space-y-4">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">Name</label>
+                <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="name" value={name} onChange={(e) => setName(e.target.value)}/>
 
-                <label htmlFor="role">Role</label>
-                <input id="role" value={role} onChange={(e) => setRole(e.target.value)}/>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-300 mb-1">Role</label>
+                <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="role" value={role} onChange={(e) => setRole(e.target.value)}/>
 
-                <label htmlFor="email">Email</label>
-                <input id="email" value={email} type="email" onChange={(e) => setEmail(e.target.value)}/>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="email" value={email} type="email" onChange={(e) => setEmail(e.target.value)}/>
 
-                <label htmlFor="linkedin_url">LinkedIn URL</label>
-                <input id="linkedin_url" value={linkedin_url} type="url" onChange={(e) => setLinkedinUrl(e.target.value)}/>
+                <label htmlFor="linkedin_url" className="block text-sm font-medium text-gray-300 mb-1">LinkedIn URL</label>
+                <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="linkedin_url" value={linkedin_url} type="url" onChange={(e) => setLinkedinUrl(e.target.value)}/>
 
-                <label htmlFor="notes">Notes</label>
-                <input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)}/>
+                <label htmlFor="notes" className="block text-sm font-medium text-gray-300 mb-1">Notes</label>
+                <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="notes" value={notes} onChange={(e) => setNotes(e.target.value)}/>
 
-                <select value={company_id ?? ''} onChange={(e) => setCompanyId(Number(e.target.value))} required>
+                <label htmlFor="company_id" className="block text-sm font-medium text-gray-300 mb-1">Company</label>
+                <select id="company_id" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={company_id ?? ''} onChange={(e) => setCompanyId(Number(e.target.value))} required>
                 <option value="" disabled>Select a company...</option> 
                 {companies.map((company) =>(
                     <option key={company.id} value={company.id}>{company.name}</option>
                 ))}
                 </select>
-
-                <button type="submit">{editingId === null ? "Add Contact" : "Save Changes"}</button> 
-
-                {editingId !== null && <button type="button" onClick={() => handleCancel()}>Cancel</button>}
+                <div className="flex justify-center gap-2">
+                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" type="submit">{editingId === null ? "Add Contact" : "Save Changes"}</button> 
+                    {editingId !== null && <button className="px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600" type="button" onClick={() => handleCancel()}>Cancel</button>}
+                </div>
             </form>
             
         </div>

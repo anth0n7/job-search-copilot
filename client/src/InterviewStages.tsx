@@ -144,31 +144,36 @@ function InterviewStages({companies, applications} : InterviewStagesProps){
 
 
     return (
-        <div>
+        <div className="mb-5">
 
-            <ul>
+            <ul className="max-w-md mx-auto space-y-2">
                {interview_stages.map((interview_stage) => (
-               <li key={interview_stage.id}>{interview_stage.stage_name}
-               <button onClick={() => handleDelete(interview_stage.id)}>Delete</button>
-                <button onClick={() => handleEdit(interview_stage)}>Edit</button>              
+               <li className="flex items-center justify-between bg-gray-800 rounded-lg p-4" key={interview_stage.id}>{interview_stage.stage_name}
+               <div className="flex gap-2">
+                    <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={() => handleDelete(interview_stage.id)}>Delete</button>
+                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" onClick={() => handleEdit(interview_stage)}>Edit</button>              
+               </div>
                </li> 
                ))} 
             </ul>
             
-            <form onSubmit={handleSubmit}>
-                <label htmlFor="stage_name">Stage Name</label>
-                <input id="stage_name" value={stage_name} onChange={(e) => setStageName(e.target.value)}/>
+            <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-gray-800 rounded-lg p-4 mt-4 space-y-4">
+                <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="stage_name">Stage Name</label>
+                <input id="stage_name" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={stage_name} onChange={(e) => setStageName(e.target.value)}/>
 
-                <label htmlFor="scheduled_date">Scheduled Date</label>
-                <input id="scheduled_date" value={scheduled_date} type="datetime-local" onChange={(e) => setScheduledDate(e.target.value)}/>
+                <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="scheduled_date">Scheduled Date</label>
+                <input id="scheduled_date" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={scheduled_date} type="datetime-local" onChange={(e) => setScheduledDate(e.target.value)}/>
 
-                <label htmlFor="completed">Completed</label>
-                <input id="completed" checked={completed} type="checkbox" onChange={(e) => setCompleted(e.target.checked)}/>
+                <div className="flex items-center gap-2">
+                    <input id="completed" checked={completed} type="checkbox" className="h-5 w-5 rounded border-gray-700 bg-gray-900 text-sky-500 focus:ring-2 focus:ring-sky-500" onChange={(e) => setCompleted(e.target.checked)}/>
+                    <label htmlFor="completed" className="text-sm font-medium text-gray-300">Completed</label>
+                </div>
 
-                <label htmlFor="notes">Notes</label>
-                <input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)}/>
+                <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="notes">Notes</label>
+                <input id="notes" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={notes} onChange={(e) => setNotes(e.target.value)}/>
 
-                <select value={application_id ?? ''} onChange={(e) => setApplicationId(Number(e.target.value))} required>
+                <label htmlFor="application_id" className="block text-sm font-medium text-gray-300 mb-1">Application</label>
+                <select id="application_id" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={application_id ?? ''} onChange={(e) => setApplicationId(Number(e.target.value))} required>
                 <option value="" disabled>Select an application...</option>
 
                 {applications.map((application) => {
@@ -178,9 +183,10 @@ function InterviewStages({companies, applications} : InterviewStagesProps){
                     );
                 })}
                 </select>
-
-                <button type="submit">{editingId === null ? "Add Interview Stage" : "Save Changes"}</button> 
-                {editingId !== null && <button type="button" onClick={() => handleCancel()}>Cancel</button>}
+                <div className="flex justify-center gap-2">
+                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" type="submit">{editingId === null ? "Add Interview Stage" : "Save Changes"}</button> 
+                    {editingId !== null && <button className="px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600" type="button" onClick={() => handleCancel()}>Cancel</button>}
+                </div>
             </form>
 
         </div>
