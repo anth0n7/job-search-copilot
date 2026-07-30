@@ -13,11 +13,33 @@ import { Routes, Route, Navigate, Link } from 'react-router'
 //lifting state up: when two or more components need the same piece of state
 //you lift that state to their nearest common parent, then hand it down to who needs it
 
+
 function App() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   //useAuth() returns an object with several things on it
   const { getToken } = useAuth();
+
+  function fetchApplications() {
+    getToken().then((token) => {
+    fetch('http://localhost:3001/applications', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Request failed');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setApplications(data);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch applications', err);
+      });
+  });
+}
+
 
   //get token returns a promise (async). Fetch can't run until getToken resolves
   useEffect(() =>{
@@ -40,24 +62,10 @@ function App() {
     });
   }, []);
 
+  //creating a callback prop - to notify the parent that something happened
+  //this is handling our on cascade delete
   useEffect(() =>{
-    getToken().then((token) => {
-      fetch('http://localhost:3001/applications', {
-        headers: {Authorization: `Bearer ${token}`},
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Request failed');
-          }
-            return response.json();
-          })
-          .then((data) =>{
-            setApplications(data);
-          })
-          .catch((err) =>{
-            console.error('Failed to fetch applications', err);
-          })
-      });
+    fetchApplications();
     }, []);
 
   // show when is clerks way of conditionally rendering
@@ -80,7 +88,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Navigate to="/applications" replace />} />
-        <Route path="/companies" element={<Companies companies={companies} setCompanies={setCompanies} />} />
+        <Route path="/companies" element={<Companies companies={companies} setCompanies={setCompanies} onCompanyDeleted={fetchApplications} />} />
         <Route path="/applications" element={<Applications companies={companies} applications={applications} setApplications={setApplications}/>} />
         <Route path="/applications/:id" element={<ApplicationDetail />} />
       </Routes>

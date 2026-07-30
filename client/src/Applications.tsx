@@ -83,6 +83,10 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
 
 
     function handleDelete(deletedId: number){
+        const confirmed = window.confirm('Deleting this application will also delete all interview stage information tied to it.');
+        if(!confirmed){
+            return;
+        }
         getToken().then((token) => {
             fetch(`http://localhost:3001/applications/${deletedId}`,{
                 method: 'DELETE',
@@ -131,8 +135,8 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
                 {applications.map((application) => (
                 <li key={application.id} onClick={() => navigate(`/applications/${application.id}`)} className="flex items-center justify-between bg-gray-800 hover:bg-gray-700 rounded-lg p-4 transition-colors cursor-pointer">{application.role_title}
                 <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={(e) => {e.stopPropagation(); handleDelete(application.id);}}>Delete</button>
-                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" onClick={(e) => {e.stopPropagation(); handleEdit(application);}}>Edit</button>
+                    <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400 cursor-pointer" onClick={(e) => {e.stopPropagation(); handleDelete(application.id);}}>Delete</button>
+                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={(e) => {e.stopPropagation(); handleEdit(application);}}>Edit</button>
                 </div>
                 </li> 
                 ))}

@@ -5,9 +5,10 @@ import { useAuth } from '@clerk/react';
 interface CompaniesProps {
     companies : Company [];
     setCompanies: React.Dispatch<React.SetStateAction<Company[]>>;
+    onCompanyDeleted: () => void;
 }
 
-function Companies({companies, setCompanies}: CompaniesProps){
+function Companies({companies, setCompanies, onCompanyDeleted}: CompaniesProps){
     const [name, setName] = useState('');
     const [website, setWebsite] = useState('');
     const [notes, setNotes] = useState('');
@@ -75,6 +76,10 @@ function Companies({companies, setCompanies}: CompaniesProps){
   }
 
   function handleDelete(deletedID: number){
+    const confirmed = window.confirm('Deleting this company will also delete all applications, contacts, and interview stages tied to it.');
+    if(!confirmed){
+        return;
+    }
     getToken().then((token) => { 
         fetch(`http://localhost:3001/companies/${deletedID}`, {
             method: 'DELETE',
@@ -88,9 +93,10 @@ function Companies({companies, setCompanies}: CompaniesProps){
             })
         .then(() => {
             setCompanies(companies.filter((keptCompany) => keptCompany.id !== deletedID));
-        if(editingId === deletedID){
-            setEditingId(null);
-        }
+            if(editingId === deletedID){
+                setEditingId(null);
+            }
+            onCompanyDeleted();
         })
         .catch((err) => {
             console.error('Failed to fetch company:', err);
