@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Company, Application} from './types';
 import { useAuth } from '@clerk/react';
+import { useNavigate } from 'react-router'
 
 interface ApplicationsProps {
     companies: Company[];
@@ -16,6 +17,7 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
     const [company_id, setCompanyId] = useState<number | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
     const { getToken } = useAuth();
+    const navigate = useNavigate();
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
         e.preventDefault();
@@ -127,10 +129,10 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
         <div className="mb-5">
             <ul className="max-w-md mx-auto space-y-2">
                 {applications.map((application) => (
-                <li key={application.id} className="flex items-center justify-between bg-gray-800 rounded-lg p-4">{application.role_title}
+                <li key={application.id} onClick={() => navigate(`/applications/${application.id}`)} className="flex items-center justify-between bg-gray-800 hover:bg-gray-700 rounded-lg p-4 transition-colors cursor-pointer">{application.role_title}
                 <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={() => handleDelete(application.id)}>Delete</button>
-                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" onClick={() => handleEdit(application)}>Edit</button>
+                    <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={(e) => {e.stopPropagation(); handleDelete(application.id);}}>Delete</button>
+                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" onClick={(e) => {e.stopPropagation(); handleEdit(application);}}>Edit</button>
                 </div>
                 </li> 
                 ))}

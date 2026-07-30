@@ -3,8 +3,9 @@ import { Show, SignInButton, SignUpButton, UserButton, useAuth} from '@clerk/rea
 import type { Company, Application } from './types';
 import Companies from './Companies';
 import Applications from './Applications';
-import Contacts from './Contacts';
-import InterviewStages from './InterviewStages';
+import ApplicationDetail from './ApplicationDetail'
+import { Routes, Route, Navigate, Link } from 'react-router'
+
 
 
 
@@ -71,10 +72,19 @@ function App() {
       </Show>
 
       <h1 className="text-2xl font-bold text-gray-100 mb-5">Job Search Copilot</h1>
-      <Companies companies={companies} setCompanies={setCompanies} />
-      <Applications companies={companies} applications={applications} setApplications={setApplications}/>
-      <Contacts companies={companies} />
-      <InterviewStages companies={companies} applications={applications} />
+
+      <nav className="flex gap-4 mb-4">
+        <Link to="/companies">Companies</Link> 
+        <Link to="/applications">Applications</Link> 
+      </nav>
+
+      <Routes>
+        <Route path="/" element={<Navigate to="/applications" replace />} />
+        <Route path="/companies" element={<Companies companies={companies} setCompanies={setCompanies} />} />
+        <Route path="/applications" element={<Applications companies={companies} applications={applications} setApplications={setApplications}/>} />
+        <Route path="/applications/:id" element={<ApplicationDetail />} />
+      </Routes>
+
     </div>
   );
 }
