@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Company, Application} from './types';
-import { useAuth } from '@clerk/react';
 import { useNavigate } from 'react-router'
+import { useApi } from './useApi'
 
 interface ApplicationsProps {
     companies: Company[];
@@ -16,61 +16,35 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
     const [application_date, setApplicationDate] = useState('');
     const [company_id, setCompanyId] = useState<number | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
-    const { getToken } = useAuth();
     const navigate = useNavigate();
+    const apiFetch = useApi();
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
         e.preventDefault();
         const dateToSend = application_date === '' ? null : application_date;
         if(editingId !== null){
-            getToken().then((token) => {
-                fetch(`http://localhost:3001/applications/${editingId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type' : 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({role_title, job_posting_url, status, application_date: dateToSend, company_id}),
-                })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error('Request failed');
-                    }
-                return response.json();
+            apiFetch(`/applications/${editingId}`, {
+                method: 'PUT',
+                headers: {'Content-Type' : 'application/json'},
+                body: JSON.stringify({role_title, job_posting_url, status, application_date: dateToSend, company_id}),
             })
-                .then((editedApplication) => {
-                    setApplications(applications.map((currentApplication) =>(
-                        currentApplication.id === editingId ? editedApplication : currentApplication
-                    )));
-                })
-                .catch((err) =>{
-                    console.error('Failed to fetch application', err);
-                })
-            });
+            .then((editedApplication) => {
+                setApplications(applications.map((currentApplication) =>(
+                    currentApplication.id === editingId ? editedApplication : currentApplication
+                )));
+            })
+            .catch((err) =>{console.error('Failed to fetch application', err)});
         }
         else{
-            getToken().then((token) => {
-                fetch('http://localhost:3001/applications', {
-                    method: 'POST',
-                    headers: {
-                            'Content-Type' : 'application/json',
-                            Authorization: `Bearer ${token}`,
-                        },
-                    body: JSON.stringify({role_title, job_posting_url, status, application_date: dateToSend, company_id}),
-                })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error('Request failed');
-                    }
-                return response.json();
+            apiFetch('/applications', {
+                method: 'POST',
+                headers: {'Content-Type' : 'application/json'},
+                body:  JSON.stringify({role_title, job_posting_url, status, application_date: dateToSend, company_id}),
             })
-                .then((newApplication) =>{
-                    setApplications([newApplication, ...applications]);
-                })
-                .catch((err) =>{
-                    console.error('Failed to fetch application', err);
-                })
-            });
+            .then((newApplication) =>{
+                setApplications([newApplication, ...applications]);
+            })
+            .catch((err) =>{console.error('Failed to fetch application', err)});
         }
 
         setRoleTitle('');
@@ -87,27 +61,16 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
         if(!confirmed){
             return;
         }
-        getToken().then((token) => {
-            fetch(`http://localhost:3001/applications/${deletedId}`,{
-                method: 'DELETE',
-                headers: {Authorization: `Bearer ${token}`},             
-            })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error('Request failed');
-                }
-                return response.json();
-            })
-            .then(() =>{
-                setApplications(applications.filter((keptApplication) => keptApplication.id !== deletedId));
-                if(editingId === deletedId){
-                    setEditingId(null);
-                }
-            })
-            .catch((err) =>{
-                console.error('Failed to fetch application', err);
-            })
-        });
+        apiFetch(`/applications/${deletedId}`,{
+            method: 'DELETE'
+        })
+        .then(() =>{
+            setApplications(applications.filter((keptApplication) => keptApplication.id !== deletedId));
+            if(editingId === deletedId){
+                setEditingId(null);
+            }
+        })
+        .catch((err) =>{console.error('Failed to fetch application', err)})
 
     }
 

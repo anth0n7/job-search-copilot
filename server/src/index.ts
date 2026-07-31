@@ -1,13 +1,25 @@
-import express, { application } from 'express';
+import express from 'express';
 import cors from 'cors';
 import { clerkMiddleware, getAuth } from '@clerk/express';
 import { pool } from './db';
+import type { Request, Response, NextFunction} from 'express'
 
 const app = express();
 //inspects each incoming request for a signed token the frontend automatically attaches
+//middleware - a function that runs between an incoming request and your route handler
 app.use(clerkMiddleware());
+//cors enusres that websites open in a browser tab cannot use a user's active session to read data from another website without explict permission
 app.use(cors());
+//allows you to build web servers and APIs using javascript
 app.use(express.json());
+
+function requireAuth(req: Request, res: Response, next: NextFunction){
+  const { isAuthenticated } = getAuth(req);
+  if(!isAuthenticated){
+    return res.status(401).json({error: 'User not logged in'});
+  }
+  next();
+}
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -27,11 +39,8 @@ app.get('/db-health', async (req, res) =>{
 //Select statement - get very column from every row
 //in the companies table newest first
 //result.rows because you want all of the companies
-app.get('/companies', async (req, res) =>{
-  const { userId, isAuthenticated } = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error: 'User not logged in'});
-  }
+app.get('/companies', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const result = await pool.query('SELECT * FROM companies WHERE user_id = $1 ORDER BY created_at DESC ',
       [userId]
@@ -44,11 +53,8 @@ app.get('/companies', async (req, res) =>{
 
 //results.rows give you an array containing one full row
 //results.rows[0] unwraps the array and give you the object itself
-app.post('/companies', async (req, res) =>{
-  const { userId, isAuthenticated } = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error: 'User not logged in'});
-  }
+app.post('/companies', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try {
     const {name, website, notes} = req.body;
     const result = await pool.query('INSERT INTO companies (name, website, notes, user_id) VALUES ($1, $2, $3, $4) RETURNING * ',
@@ -60,11 +66,8 @@ app.post('/companies', async (req, res) =>{
   }
 });
 
-app.get('/companies/:id', async (req, res) =>{
-  const { userId, isAuthenticated } = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error: 'User not logged in'});
-  }
+app.get('/companies/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const companyID = req.params.id;
     const result = await pool.query('SELECT * FROM companies WHERE id =  $1 AND user_id = $2',
@@ -80,11 +83,8 @@ app.get('/companies/:id', async (req, res) =>{
 });
 
 //Without WHERE - update every single row in applications to these values
-app.put('/companies/:id', async (req, res) =>{
-  const { userId, isAuthenticated } = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error: 'User not logged in'});
-  }
+app.put('/companies/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const {name, website, notes} = req.body;
     const id = req.params.id;
@@ -100,11 +100,8 @@ app.put('/companies/:id', async (req, res) =>{
   }
 });
 
-app.delete('/companies/:id', async (req, res) =>{
-  const { userId, isAuthenticated } = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error: 'User not logged in'});
-  }
+app.delete('/companies/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const id = req.params.id;
     const result = await pool.query('DELETE FROM companies WHERE id = $1 AND user_id = $2 RETURNING *',
@@ -121,11 +118,8 @@ app.delete('/companies/:id', async (req, res) =>{
 
 
 //applications.* - give me every column, but only from applications (both talbes might have columns with the same name)
-app.get('/applications', async (req, res) =>{
-  const {userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error:'User not logged in'});
-  }
+app.get('/applications', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const result = await pool.query('SELECT applications.* FROM applications JOIN companies ON applications.company_id = companies.id WHERE companies.user_id = $1',
       [userId]
@@ -137,11 +131,8 @@ app.get('/applications', async (req, res) =>{
 });
 
 //first query to verify company id actually belongs to the user
-app.post('/applications', async (req, res) =>{
-  const {userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error:'User not logged in'});
-  }
+app.post('/applications', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const {company_id, role_title, job_posting_url, status, application_date} = req.body;
     const auth = await pool.query('SELECT * FROM companies WHERE user_id = $1 AND id = $2',
@@ -163,11 +154,8 @@ app.post('/applications', async (req, res) =>{
 });
 
 //404 is good here because it doesn't reveal "exists but not yours"
-app.get('/applications/:id', async (req, res) =>{
-  const {userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error:'User not logged in'});
-  }
+app.get('/applications/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const applicationID = req.params.id;
     const result = await pool.query('SELECT applications.* FROM applications JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 and companies.user_id = $2',
@@ -182,11 +170,8 @@ app.get('/applications/:id', async (req, res) =>{
   }
 });
 
-app.put('/applications/:id', async(req, res) =>{
-  const {userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error:'User not logged in'});
-  }
+app.put('/applications/:id', requireAuth, async(req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const {company_id, role_title, job_posting_url, status, application_date} = req.body;
     const applicationID = req.params.id;
@@ -220,12 +205,8 @@ app.put('/applications/:id', async(req, res) =>{
   }
 });
 
-app.delete('/applications/:id', async (req, res) =>{
-  const {userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error:'User not logged in'});
-  }
-
+app.delete('/applications/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const applicationID = req.params.id;
     const auth = await pool.query('SELECT applications.id FROM applications JOIN companies on applications.company_id = companies.id WHERE applications.id = $1 and companies.user_id = $2',
@@ -247,14 +228,10 @@ app.delete('/applications/:id', async (req, res) =>{
   }
 });
 
-app.get('/contacts', async (req, res) =>{
-  const {userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error:'User not logged in'});
-  }
-
+app.get('/contacts', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
-    const result = await pool.query('SElECT contacts.* FROM contacts JOIN companies ON contacts.company_id = companies.id WHERE companies.user_id = $1',
+    const result = await pool.query('SELECT contacts.* FROM contacts JOIN companies ON contacts.company_id = companies.id WHERE companies.user_id = $1',
       [userId]
     );
     res.json(result.rows);
@@ -263,12 +240,8 @@ app.get('/contacts', async (req, res) =>{
   }
 });
 
-app.get('/contacts/:id', async (req, res) =>{
-  const {userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error:'User not logged in'});
-  }
-
+app.get('/contacts/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const contactID = req.params.id;
     const result = await pool.query('SELECT contacts.* FROM contacts JOIN companies ON contacts.company_id = companies.id WHERE contacts.id = $1 AND companies.user_id = $2',
@@ -283,11 +256,8 @@ app.get('/contacts/:id', async (req, res) =>{
   }
 });
 
-app.post('/contacts', async (req, res) =>{
-const {userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error:'User not logged in'});
-  }
+app.post('/contacts', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
 
   try{
     const {company_id, name, role, email, linkedin_url, notes} = req.body;
@@ -310,12 +280,8 @@ const {userId, isAuthenticated} = getAuth(req);
   }
 });
 
-app.put('/contacts/:id', async (req, res) =>{
-  const {userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error:'User not logged in'});
-  }
-
+app.put('/contacts/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const contactID = req.params.id;
     const {company_id, name, role, email, linkedin_url, notes} = req.body;
@@ -346,12 +312,8 @@ app.put('/contacts/:id', async (req, res) =>{
   }
 });
 
-app.delete('/contacts/:id', async (req, res) =>{
-  const {userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error:'User not logged in'});
-  }
-
+app.delete('/contacts/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const contactID = req.params.id;
 
@@ -375,14 +337,10 @@ app.delete('/contacts/:id', async (req, res) =>{
 
 
 
-app.get('/interview_stages', async (req, res) =>{
-  const { userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error: 'User not logged in'});
-  }
-
+app.get('/interview_stages', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
-    const result = await pool.query('SElECT interview_stages.* FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE companies.user_id = $1',
+    const result = await pool.query('SELECT interview_stages.* FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE companies.user_id = $1',
       [userId]
     );
     res.json(result.rows);
@@ -391,15 +349,11 @@ app.get('/interview_stages', async (req, res) =>{
   }
 });
 
-app.get('/interview_stages/:id', async (req, res) =>{
-  const { userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error: 'User not logged in'});
-  }
-
+app.get('/interview_stages/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const interviewStagesId = req.params.id;
-    const result = await pool.query('SElECT interview_stages.* FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE companies.user_id = $1 AND interview_stages.id = $2',
+    const result = await pool.query('SELECT interview_stages.* FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE companies.user_id = $1 AND interview_stages.id = $2',
       [userId, interviewStagesId]
     );
     if(result.rows.length === 0){
@@ -411,12 +365,8 @@ app.get('/interview_stages/:id', async (req, res) =>{
   }
 });
 
-app.post('/interview_stages', async (req, res) =>{
-  const { userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error: 'User not logged in'});
-  }
-
+app.post('/interview_stages', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const { application_id, stage_name, scheduled_date, completed, notes } = req.body;
     const completedValue = completed ?? false;
@@ -440,12 +390,8 @@ app.post('/interview_stages', async (req, res) =>{
   }
 });
 
-app.put('/interview_stages/:id', async (req, res) =>{
-  const { userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error: 'User not logged in'});
-  }
-
+app.put('/interview_stages/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const interviewStagesId = req.params.id;
     const {application_id, stage_name, scheduled_date, completed, notes} = req.body;
@@ -476,12 +422,8 @@ app.put('/interview_stages/:id', async (req, res) =>{
   }
 });
 
-app.delete('/interview_stages/:id', async (req, res) =>{
-  const { userId, isAuthenticated} = getAuth(req);
-  if(isAuthenticated === false){
-    return res.status(401).json({error: 'User not logged in'});
-  }
-
+app.delete('/interview_stages/:id', requireAuth, async (req, res) =>{
+  const { userId } = getAuth(req);
   try{
     const interviewStagesId = req.params.id;
     const auth = await pool.query('SELECT interview_stages.id FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE interview_stages.id = $1 and companies.user_id = $2',

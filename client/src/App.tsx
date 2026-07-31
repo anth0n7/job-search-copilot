@@ -5,7 +5,7 @@ import Companies from './Companies';
 import Applications from './Applications';
 import ApplicationDetail from './ApplicationDetail'
 import { Routes, Route, Navigate, Link } from 'react-router'
-
+import { useApi } from './useApi'
 
 
 
@@ -17,53 +17,25 @@ import { Routes, Route, Navigate, Link } from 'react-router'
 function App() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
+  const apiFetch = useApi();
   //useAuth() returns an object with several things on it
-  const { getToken } = useAuth();
-
-  function fetchApplications() {
-    getToken().then((token) => {
-    fetch('http://localhost:3001/applications', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Request failed');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setApplications(data);
-      })
-      .catch((err) => {
-        console.error('Failed to fetch applications', err);
-      });
-  });
-}
-
-
-  //get token returns a promise (async). Fetch can't run until getToken resolves
-  useEffect(() =>{
-    getToken().then((token) => {
-      fetch('http://localhost:3001/companies', {
-        headers: {Authorization: `Bearer ${token}`},
-      })
-      .then((response) =>{
-        if(!response.ok){
-          throw new Error('Response failed');
-        }
-        return response.json()        
-      })
-      .then((data) =>{
-        setCompanies(data);
-      })
-      .catch((err) => {
-        console.error('Failed to fetch companies:', err);
-      })
-    });
-  }, []);
 
   //creating a callback prop - to notify the parent that something happened
   //this is handling our on cascade delete
+  function fetchApplications() {
+    apiFetch('/applications')
+    .then((data) => {setApplications(data);})
+    .catch((err) => {console.error('Failed to fetch applications', err)});
+}
+
+  //get token returns a promise (async). Fetch can't run until getToken resolves
+  useEffect(() =>{
+    apiFetch('/companies')
+      .then((data) =>{setCompanies(data)})
+      .catch((err) => {console.error('Failed to fetch companies:', err)})
+  }, []);
+
+ 
   useEffect(() =>{
     fetchApplications();
     }, []);
