@@ -2,6 +2,7 @@ import { useParams } from 'react-router'
 import { useState, useEffect} from 'react'
 import type { Application, Company } from './types'
 import { useApi } from './useApi'
+import InterviewStages from './InterviewStages'
 
 
 interface ApplicationDetailsProp{
@@ -27,17 +28,15 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
     return(
         <div className="flex justify-center">
             {application !== null && (
-                <div className=" border-2 p-10 rounded-3xl w-96 min-h-96">
+                <div className=" border-2 p-10 rounded-3xl max-w-2xl mx-auto min-h-96">
                     <h1 className="flex justify-center font-semibold">{application.role_title} at {company?.name}</h1>
                     
                     {company && (
                        <div className="mt-6 border-t pt-4">
-
                             <div className="flex gap-1">
                                 <span className="font-medium">Company Website:</span>
                                 <a href={company.website} className="text-sky-300 hover:underline">{company.website}</a>
                             </div>
-
                         </div>
                     )}
                 
@@ -55,7 +54,13 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
                         <span className="font-medium">Job URL:</span>
                         <a href = {application.job_posting_url} target="_blank" className="text-sky-300 hover:underline">{application.job_posting_url}</a>
                     </div>
+
+                    <div className="mt-6 border-t pt-4">
+                        <InterviewStages applicationID={application.id} />
+                    </div>
+
                 </div>
+
             )}
         </div>
     )
