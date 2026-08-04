@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Show, SignInButton, SignUpButton, UserButton, useAuth} from '@clerk/react';
+import { Show, SignInButton, SignUpButton, UserButton} from '@clerk/react';
 import type { Company, Application } from './types';
 import Companies from './Companies';
 import Applications from './Applications';
@@ -62,7 +62,7 @@ function App() {
         <Route path="/" element={<Navigate to="/applications" replace />} />
         <Route path="/companies" element={<Companies companies={companies} setCompanies={setCompanies} onCompanyDeleted={fetchApplications} />} />
         <Route path="/applications" element={<Applications companies={companies} applications={applications} setApplications={setApplications}/>} />
-        <Route path="/applications/:id" element={<ApplicationDetail />} />
+        <Route path="/applications/:id" element={<ApplicationDetail companies={companies} />} />
       </Routes>
 
     </div>

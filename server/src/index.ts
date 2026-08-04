@@ -445,6 +445,20 @@ app.delete('/interview_stages/:id', requireAuth, async (req, res) =>{
   }
 });
 
+app.get('/applications/:id/interview_stages', requireAuth, async(req, res) => {
+  const { userId } = getAuth(req);
+
+  try{
+    const applicationID = req.params.id;
+    const result = await pool.query('SELECT interview_stages.* FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 and companies.user_id = $2',
+      [applicationID, userId]
+    );
+    res.json(result.rows);
+    } catch (err){
+      res.status(500).json({error: String(err)});
+  } 
+});
+
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
