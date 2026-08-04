@@ -3,6 +3,7 @@ import { useState, useEffect} from 'react'
 import type { Application, Company } from './types'
 import { useApi } from './useApi'
 import InterviewStages from './InterviewStages'
+import ApplicationContacts from './ApplicationContacts'
 
 
 interface ApplicationDetailsProp{
@@ -37,6 +38,10 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
                                 <span className="font-medium">Company Website:</span>
                                 <a href={company.website} className="text-sky-300 hover:underline">{company.website}</a>
                             </div>
+
+                            <div className="mt-6 border-t pt-4">
+                                <ApplicationContacts companyID={company.id} />
+                            </div>
                         </div>
                     )}
                 
@@ -58,6 +63,7 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
                     <div className="mt-6 border-t pt-4">
                         <InterviewStages applicationID={application.id} />
                     </div>
+
 
                 </div>
 

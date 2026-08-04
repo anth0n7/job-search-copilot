@@ -98,6 +98,7 @@ function InterviewStages({applicationID} : InterviewStagesProps){
     return (
         
         <div>
+            <h1 className="flex justify-center font-semibold">Interview Stages:</h1>
             <div className="max-w-md mx-auto space-y-3">
                {interview_stages.map((interview_stage) => (
                 <div key={interview_stage.id} className=" bg-gray-800 rounded-lg p-4">

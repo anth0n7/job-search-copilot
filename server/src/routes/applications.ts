@@ -121,7 +121,7 @@ router.get('/:id/interview_stages', requireAuth, async(req, res) => {
 
   try{
     const applicationID = req.params.id;
-    const result = await pool.query('SELECT interview_stages.* FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 and companies.user_id = $2',
+    const result = await pool.query('SELECT interview_stages.* FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 AND companies.user_id = $2',
       [applicationID, userId]
     );
     res.json(result.rows);
@@ -129,5 +129,7 @@ router.get('/:id/interview_stages', requireAuth, async(req, res) => {
       res.status(500).json({error: String(err)});
   } 
 });
+
+
 
 export default router;

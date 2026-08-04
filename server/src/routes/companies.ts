@@ -82,4 +82,17 @@ router.delete('/:id', requireAuth, async (req, res) =>{
   } 
 });
 
+router.get('/:id/contacts', requireAuth, async(req, res) => {
+    const { userId } = getAuth(req);
+    try{
+        const companyID = req.params.id;
+        const result = await pool.query('SELECT contacts.* FROM contacts JOIN companies ON contacts.company_id = companies.id WHERE companies.id = $1 AND companies.user_id = $2',
+            [companyID, userId]
+        );
+        res.json(result.rows)
+    } catch (err) {
+        res.status(500).json({error: String(err)});
+    }
+});
+
 export default router;
