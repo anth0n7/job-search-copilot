@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Company } from './types';
 import { useApi } from './useApi'
+import { useError } from './useError'
 
 interface CompaniesProps {
     companies : Company [];
@@ -14,6 +15,7 @@ function Companies({companies, setCompanies, onCompanyDeleted}: CompaniesProps){
     const [notes, setNotes] = useState('');
     const [editingId, setEditingId] = useState<number | null>(null);
     const apiFetch = useApi();
+    const {setErrorMessage} = useError();
 
     //map means loop through every item in the array. The format has to look like this.
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
@@ -29,7 +31,9 @@ function Companies({companies, setCompanies, onCompanyDeleted}: CompaniesProps){
             currentCompany.id === editingId ? editedCompany : currentCompany
             )));
         })
-        .catch((err) => {console.error('Failed to fetch company:', err)});
+        .catch((err) => {console.error('Failed to fetch company:', err);
+            setErrorMessage(err.message);
+        });
     }
     else{
         apiFetch('/companies', {
@@ -40,7 +44,9 @@ function Companies({companies, setCompanies, onCompanyDeleted}: CompaniesProps){
         .then((company) =>{
             setCompanies([company, ...companies]);
         })
-        .catch((err) => {console.error('Failed to fetch company:', err)});
+        .catch((err) => {console.error('Failed to fetch company:', err);
+            setErrorMessage(err.message);
+        });
     }
 
     setName('');
@@ -64,7 +70,9 @@ function Companies({companies, setCompanies, onCompanyDeleted}: CompaniesProps){
         }
             onCompanyDeleted();
         })
-    .catch((err) => {console.error('Failed to fetch company:', err)});
+    .catch((err) => {console.error('Failed to fetch company:', err);
+        setErrorMessage(err.message);
+    });
   }
 
   //just brings company information to be edited

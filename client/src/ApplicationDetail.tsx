@@ -2,6 +2,7 @@ import { useParams } from 'react-router'
 import { useState, useEffect} from 'react'
 import type { Application, Company } from './types'
 import { useApi } from './useApi'
+import { useError } from './useError'
 import InterviewStages from './InterviewStages'
 import ApplicationContacts from './ApplicationContacts'
 
@@ -16,13 +17,16 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
     const { id } = useParams();
     const [application, setApplication ] = useState<Application | null>(null);
     const apiFetch = useApi();
+    const { setErrorMessage } = useError();
     //?. is used when application is null so the component doesn't crash. Handles the action before the fetch resolves
     const company = companies.find((c) => c.id === application?.company_id);
 
     useEffect(() => {
         apiFetch(`/applications/${id}`)
         .then((data) =>{setApplication(data)})
-        .catch((err) => {console.error('Failed to fetch application: ', err)});
+        .catch((err) => {console.error('Failed to fetch application: ', err);
+            setErrorMessage(err.message);
+        });
     }, [id]);
 
     //we need the condition because JSX runs before the data exists and the initial value is null

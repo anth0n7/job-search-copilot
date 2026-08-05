@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Contact } from './types'
 import { useApi } from './useApi'
+import { useError } from './useError' 
 
 interface ApplicationContactsProp{
     companyID: number;
@@ -8,17 +9,19 @@ interface ApplicationContactsProp{
 
 function ApplicationContacts({companyID} : ApplicationContactsProp){
     const [contacts, setContact] = useState<Contact[]>([]);
-    
     const apiFetch = useApi();
+    const { setErrorMessage } = useError();
     useEffect(() =>{
         apiFetch(`/companies/${companyID}/contacts`)
         .then((data) =>{setContact(data)})
-        .catch((err) => {console.error('Failed to fetch contact', err)});
+        .catch((err) => {console.error('Failed to fetch contact', err);
+            setErrorMessage(err.message);
+        });
     }, [companyID]);
 
     return(
         <div>
-            <h1 className=" font-semibold">Contacts:</h1>
+            <h1 className="font-semibold">Contacts:</h1>
             <div className="max-w-md mx-auto space-y-3">
                {contacts.map((contact) => (
                 <div key={contact.id} className=" bg-gray-800 rounded-lg p-4">

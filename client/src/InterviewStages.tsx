@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { InterviewStage } from './types';
 import { useApi } from './useApi'
+import { useError } from './useError'
 
 
 interface InterviewStagesProps{
@@ -16,13 +17,16 @@ function InterviewStages({applicationID} : InterviewStagesProps){
     const [editingId, setEditingId] = useState<number | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const apiFetch = useApi();
+    const {setErrorMessage} = useError();
 
 
     //[applicationID] is a dependancy array. If applicationId changes run the effect again
     useEffect(() => {
         apiFetch(`/applications/${applicationID}/interview_stages`)
         .then((data) => {setInterviewStages(data);})
-        .catch((err) =>{console.error("Failed to fetch interview stages:", err)})
+        .catch((err) =>{console.error("Failed to fetch interview stages:", err);
+            setErrorMessage(err.message);
+        })
     } , [applicationID]);
 
     function handleDelete(deletedId: number){
@@ -36,7 +40,9 @@ function InterviewStages({applicationID} : InterviewStagesProps){
             }
         })
         .catch((err) => {
-            console.error('Failed to fetch interview stages:', err)}) 
+            console.error('Failed to fetch interview stages:', err);
+            setErrorMessage(err.message);
+        }) 
     }
 
     function handleEdit(editedInterviewStage: InterviewStage){
@@ -62,7 +68,9 @@ function InterviewStages({applicationID} : InterviewStagesProps){
                     current_interview_stage.id === editingId ? editedInterviewStage : current_interview_stage
                 ))); 
             })
-            .catch((err) =>{console.error('Failed to fetch interview stages:', err)})
+            .catch((err) =>{console.error('Failed to fetch interview stages:', err);
+                setErrorMessage(err.message);
+            })
         }
         else{
             apiFetch('/interview_stages',{
@@ -73,7 +81,9 @@ function InterviewStages({applicationID} : InterviewStagesProps){
             .then((interview_stage) =>{
                 setInterviewStages([interview_stage, ...interview_stages]);
             })
-            .catch((err) =>{console.error('Failed to fetch interview stages:', err)})
+            .catch((err) =>{console.error('Failed to fetch interview stages:', err);
+                setErrorMessage(err.message);
+            })
         }
         setCompleted(false);
         setIsModalOpen(false);

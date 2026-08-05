@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Company, Contact } from './types';
 import { useApi } from './useApi'
+import { useError } from './useError'
 
 interface ContactsProps{
     companies: Company[]
@@ -18,11 +19,14 @@ function Contacts({companies}: ContactsProps){
     const [notes, setNotes] = useState('');
     const [editingId, setEditingId] = useState<number | null>(null);
     const apiFetch = useApi();
+    const {setErrorMessage} = useError();
 
     useEffect(() =>{
         apiFetch('/contacts')
         .then((data) =>{setContacts(data)})
-        .catch((err) => {console.error('Failed to fetch contacts', err)})
+        .catch((err) => {console.error('Failed to fetch contacts', err);
+            setErrorMessage(err.message);
+        })
     }, []);
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
@@ -38,7 +42,9 @@ function Contacts({companies}: ContactsProps){
                     currentContact.id === editingId ? editedContact : currentContact
                 )));
             })
-            .catch((err) =>{console.error('Failed to fetch contact:', err)})
+            .catch((err) =>{console.error('Failed to fetch contact:', err);
+                setErrorMessage(err.message);
+            })
         }
         else{
             apiFetch(`/contacts`, {
@@ -47,7 +53,9 @@ function Contacts({companies}: ContactsProps){
                 body: JSON.stringify({name, role, email, linkedin_url, notes, company_id})
             })
             .then((contact) =>{setContacts([contact, ...contacts])})
-            .catch((err) =>{console.error('Failed to fetch contact:', err)})
+            .catch((err) =>{console.error('Failed to fetch contact:', err);
+                setErrorMessage(err.message);
+            })
         }
         setCompanyId(null);
         setEmail('');
@@ -68,7 +76,9 @@ function Contacts({companies}: ContactsProps){
                 setEditingId(null);
             }
         })
-        .catch((err) =>{console.error('Failed to fetch contact:', err)})
+        .catch((err) =>{console.error('Failed to fetch contact:', err);
+            setErrorMessage(err.message);
+        })
     }
 
     function handleEdit(editedContact: Contact){

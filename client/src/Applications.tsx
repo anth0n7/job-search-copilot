@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Company, Application} from './types';
 import { useNavigate } from 'react-router'
 import { useApi } from './useApi'
+import { useError } from './useError'
 
 interface ApplicationsProps {
     companies: Company[];
@@ -18,6 +19,7 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
     const [editingId, setEditingId] = useState<number | null>(null);
     const navigate = useNavigate();
     const apiFetch = useApi();
+    const {setErrorMessage} = useError();
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
         e.preventDefault();
@@ -33,7 +35,9 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
                     currentApplication.id === editingId ? editedApplication : currentApplication
                 )));
             })
-            .catch((err) =>{console.error('Failed to fetch application', err)});
+            .catch((err) =>{console.error('Failed to fetch application', err)
+                setErrorMessage(err.message);
+            });
         }
         else{
             apiFetch('/applications', {
@@ -44,7 +48,9 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
             .then((newApplication) =>{
                 setApplications([newApplication, ...applications]);
             })
-            .catch((err) =>{console.error('Failed to fetch application', err)});
+            .catch((err) =>{console.error('Failed to fetch application', err)
+                setErrorMessage(err.message);
+            });
         }
 
         setRoleTitle('');
@@ -70,7 +76,9 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
                 setEditingId(null);
             }
         })
-        .catch((err) =>{console.error('Failed to fetch application', err)})
+        .catch((err) =>{console.error('Failed to fetch application', err)
+            setErrorMessage(err.message);
+        })
 
     }
 

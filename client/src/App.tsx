@@ -6,6 +6,10 @@ import Applications from './Applications';
 import ApplicationDetail from './ApplicationDetail'
 import { Routes, Route, Navigate, Link } from 'react-router'
 import { useApi } from './useApi'
+import { useError } from './useError'
+import ErrorBanner from './ErrorBanner';
+
+
 
 
 
@@ -18,6 +22,7 @@ function App() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const apiFetch = useApi();
+  const { setErrorMessage } = useError();
   //useAuth() returns an object with several things on it
 
   //creating a callback prop - to notify the parent that something happened
@@ -25,14 +30,18 @@ function App() {
   function fetchApplications() {
     apiFetch('/applications')
     .then((data) => {setApplications(data);})
-    .catch((err) => {console.error('Failed to fetch applications', err)});
+    .catch((err) => {console.error('Failed to fetch applications', err)
+      setErrorMessage(err.message);
+    });
 }
 
   //get token returns a promise (async). Fetch can't run until getToken resolves
   useEffect(() =>{
     apiFetch('/companies')
       .then((data) =>{setCompanies(data)})
-      .catch((err) => {console.error('Failed to fetch companies:', err)})
+      .catch((err) => {console.error('Failed to fetch companies:', err);
+        setErrorMessage(err.message);
+      })
   }, []);
 
  
@@ -57,6 +66,8 @@ function App() {
         <Link to="/companies">Companies</Link> 
         <Link to="/applications">Applications</Link> 
       </nav>
+
+      <ErrorBanner />
 
       <Routes>
         <Route path="/" element={<Navigate to="/applications" replace />} />
