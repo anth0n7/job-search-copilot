@@ -7,6 +7,7 @@ import companiesRouter from './routes/companies'
 import applicationsRouter from './routes/applications'
 import contactsRouter from './routes/contacts'
 import interviewStageRouter from './routes/interview_stages'
+import resumesRouter from './routes/resumes';
 
 const app = express();
 //inspects each incoming request for a signed token the frontend automatically attaches
@@ -21,6 +22,7 @@ app.use('/companies', companiesRouter);
 app.use('/applications', applicationsRouter);
 app.use('/contacts', contactsRouter);
 app.use('/interview_stages', interviewStageRouter);
+app.use('/resumes', resumesRouter);
 
 const PORT = 3001;
 app.listen(PORT, () => {
