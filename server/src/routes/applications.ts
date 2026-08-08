@@ -130,6 +130,41 @@ router.get('/:id/interview_stages', requireAuth, async(req, res) => {
   } 
 });
 
+router.put('/:id/job_postings', requireAuth, async (req, res) =>{
+    const { userId } = getAuth(req);
+    try{
+        const applicationID = req.params.id;
+        const { raw_text }  = req.body;
+        const auth = await pool.query('SELECT applications.id FROM applications JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 AND companies.user_id = $2',
+            [applicationID, userId]
+        );
+        if(auth.rows.length === 0){
+            return res.status(404).json({error: 'Application not found'});
+        }
+        const result = await pool.query('INSERT INTO job_postings (application_id, raw_text) VALUES ($1, $2) ON CONFLICT (application_id) DO UPDATE SET raw_text = $2 RETURNING *',
+            [applicationID, raw_text]
+        )
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({error: String(err)});
+    }
+});
+
+router.get('/:id/job_postings', requireAuth, async(req, res) => {
+    const { userId } = getAuth(req);
+    const applicationID = req.params.id;
+    try{
+        const result = await pool.query('SELECT job_postings.* FROM job_postings JOIN applications ON job_postings.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE companies.user_id = $1 AND applications.id = $2',
+            [userId, applicationID]
+        );
+        if (result.rows.length === 0){
+            return res.json(null);
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({error: String(err)});
+    }
+});
 
 
 export default router;
