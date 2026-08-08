@@ -1,6 +1,8 @@
 DROP TABLE IF EXISTS interview_stages, contacts,
  applications, companies CASCADE;
 
+DROP TABLE IF EXISTS resumes;
+
 CREATE TABLE companies (
   id SERIAL PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -41,4 +43,11 @@ CREATE TABLE interview_stages(
   scheduled_date TIMESTAMP,
   completed BOOLEAN DEFAULT FALSE,
   notes TEXT
+);
+
+CREATE TABLE resumes (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL UNIQUE,
+  updated_at TIMESTAMP DEFAULT NOW(),
+  resume_text TEXT
 );
