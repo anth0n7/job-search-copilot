@@ -8,6 +8,7 @@ import applicationsRouter from './routes/applications'
 import contactsRouter from './routes/contacts'
 import interviewStageRouter from './routes/interview_stages'
 import resumesRouter from './routes/resumes';
+import matchesRouter from './routes/matches';
 
 const app = express();
 //inspects each incoming request for a signed token the frontend automatically attaches
@@ -23,6 +24,7 @@ app.use('/applications', applicationsRouter);
 app.use('/contacts', contactsRouter);
 app.use('/interview_stages', interviewStageRouter);
 app.use('/resumes', resumesRouter);
+app.use('/matches', matchesRouter);
 
 const PORT = 3001;
 app.listen(PORT, () => {

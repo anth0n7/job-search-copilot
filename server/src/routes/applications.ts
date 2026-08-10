@@ -166,5 +166,18 @@ router.get('/:id/job_postings', requireAuth, async(req, res) => {
     }
 });
 
+router.get('/:id/matches', requireAuth, async (req, res) =>{
+    const { userId } = getAuth(req);
+    const applicationID = req.params.id;
+    try{
+        const result = await pool.query('SELECT matches.* FROM matches JOIN applications ON matches.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 and companies.user_id = $2 ORDER BY matches.created_at DESC',
+            [applicationID, userId]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({error: String(err)});
+    }
+});
+
 
 export default router;
