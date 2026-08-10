@@ -179,5 +179,42 @@ router.get('/:id/matches', requireAuth, async (req, res) =>{
     }
 });
 
+router.put('/:id/suggestions', requireAuth, async (req, res) =>{
+    const { userId } = getAuth(req);
+    try{
+        const applicationID = req.params.id;
+        const { cover_letter_draft, suggested_changes }  = req.body;
+        const auth = await pool.query('SELECT applications.id FROM applications JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 AND companies.user_id = $2',
+            [applicationID, userId]
+        );
+        if(auth.rows.length === 0){
+            return res.status(404).json({error: 'Application not found'});
+        }
+        const result = await pool.query('INSERT INTO suggestions (application_id, cover_letter_draft, suggested_changes) VALUES ($1, $2, $3) ON CONFLICT (application_id) DO UPDATE SET cover_letter_draft = $2, suggested_changes = $3 RETURNING *',
+            [applicationID, cover_letter_draft, JSON.stringify(suggested_changes)]
+        )
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({error: String(err)});
+    }
+});
+
+
+router.get('/:id/suggestions', requireAuth, async(req, res) => {
+    const { userId } = getAuth(req);
+    const applicationID = req.params.id;
+    try{
+        const result = await pool.query('SELECT suggestions.* FROM suggestions JOIN applications ON suggestions.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE companies.user_id = $1 AND applications.id = $2',
+            [userId, applicationID]
+        );
+        if (result.rows.length === 0){
+            return res.json(null);
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({error: String(err)});
+    }
+});
+
 
 export default router;

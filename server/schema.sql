@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS interview_stages, contacts,
- applications, companies, job_postings, matches CASCADE;
+ applications, companies, job_postings, matches, suggestions CASCADE;
 
 DROP TABLE IF EXISTS resumes;
 
@@ -70,4 +70,13 @@ CREATE TABLE matches (
   missing_skills TEXT[] NOT NULL,
   resume_text_snapshot TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE suggestions(
+  id SERIAL PRIMARY KEY,
+  application_id INTEGER NOT NULL UNIQUE REFERENCES
+  applications(id) ON DELETE CASCADE,
+  suggested_changes JSONB NOT NULL,
+  cover_letter_draft TEXT NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW()
 );
