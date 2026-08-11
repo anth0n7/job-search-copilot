@@ -5,6 +5,7 @@ import { useApi } from './useApi'
 import { useError } from './useError'
 import InterviewStages from './InterviewStages'
 import ApplicationContacts from './ApplicationContacts'
+import JobPostings from './JobPostings'
 
 
 interface ApplicationDetailsProp{
@@ -66,6 +67,10 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
 
                     <div className="mt-6 border-t pt-4">
                         <InterviewStages applicationID={application.id} />
+                    </div>
+
+                    <div>
+                        <JobPostings applicationID={application.id} />
                     </div>
 
 
