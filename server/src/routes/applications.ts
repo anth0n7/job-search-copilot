@@ -1,7 +1,8 @@
-import { Router } from 'express'
+import { application, Router } from 'express'
 import { requireAuth } from '../middleware'
 import { getAuth } from '@clerk/express'
 import {pool} from '../db'
+import { parseJobPosting } from '../parseJobPosting'
 
 const router = Router();
 
@@ -145,6 +146,39 @@ router.put('/:id/job_postings', requireAuth, async (req, res) =>{
             [applicationID, raw_text]
         )
         res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({error: String(err)});
+    }
+});
+
+//we use parse to differentiate that this route doesn't create anything, but triggers a process to transform existing data
+router.post('/:id/job_postings/parse', requireAuth, async(req, res) =>{
+    const { userId } = getAuth(req);
+    const applicationID = req.params.id;
+
+    try{
+        const auth = await pool.query('SELECT applications.id FROM applications JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 AND companies.user_id = $2',
+            [applicationID, userId]
+        )
+        if(auth.rows.length === 0){
+            return res.status(404).json({error: 'Application not found'});
+        }
+
+        const raw_text = await pool.query('SELECT job_postings.raw_text FROM job_postings WHERE job_postings.application_id = $1',
+            [applicationID]
+        );
+        if(raw_text.rows.length === 0){
+            return res.status(400).json({error:'raw text not found'});
+        }
+
+        const parsed_data = await parseJobPosting(raw_text.rows[0].raw_text);
+        
+        const result = await pool.query('UPDATE job_postings SET parsed_data = $1 WHERE application_id = $2 RETURNING *',
+            [JSON.stringify(parsed_data), applicationID]
+        );
+
+        res.json(result.rows[0]);
+
     } catch (err) {
         res.status(500).json({error: String(err)});
     }
