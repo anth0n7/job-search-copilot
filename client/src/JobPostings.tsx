@@ -62,19 +62,19 @@ function JobPostings({applicationID} : JobPostingProps){
                 {job_posting != null && <button disabled={hasUnsavedChanges} className="px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => handleParse()}>Parse Job Posting</button>}
             </div>
             {job_posting?.parsed_data && (
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-3">
                 <h2 className="flex justify-center font-semibold mb-2">Parsed Data</h2>
                     <div className="flex gap-1">
                         <span className="font-medium">Seniority:</span>
                         <p>{job_posting.parsed_data.seniority}</p>
                     </div>
 
-                    <div className="flex gap-1">
+                    <div className="flex flex-col gap-1">
                         <span className="font-medium">Required Skills:</span>
                         <p>{job_posting.parsed_data.required_skills.join(", ")}</p>
                     </div>
 
-                    <div className="flex gap-1">
+                    <div className="flex flex-col gap-1">
                         <span className="font-medium">Responsibilities:</span>
                         <p>{job_posting.parsed_data.responsibilities.join(", ")}</p>
                     </div>
