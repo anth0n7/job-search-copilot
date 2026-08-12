@@ -8,9 +8,8 @@ import applicationsRouter from './routes/applications'
 import contactsRouter from './routes/contacts'
 import interviewStageRouter from './routes/interview_stages'
 import resumesRouter from './routes/resumes';
-import matchesRouter from './routes/matches';
-import { getEmbedding } from './getEmbedding';
-import { cosineSimilarity } from './similarity';
+
+
 
 
 const app = express();
@@ -27,21 +26,9 @@ app.use('/applications', applicationsRouter);
 app.use('/contacts', contactsRouter);
 app.use('/interview_stages', interviewStageRouter);
 app.use('/resumes', resumesRouter);
-app.use('/matches', matchesRouter);
 
-app.get('/test-similarity', async (req, res) => {
-  try{
-    const vecA = await getEmbedding('Software engineer with React and Node experience');
-    const vecB = await getEmbedding('Looking for a developer skilled in React and Node.js');
-    const vecC = await getEmbedding('Professional chef specializing in Italian cuisine');
-    res.json({
-      similarBoth: cosineSimilarity(vecA, vecB),
-      unrelated: cosineSimilarity(vecA, vecC),
-    });
-  } catch (err) {
-    res.status(500).json({errror: String(err)});
-  }
-})
+
+
 
 const PORT = 3001;
 app.listen(PORT, () => {

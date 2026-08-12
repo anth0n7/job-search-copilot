@@ -3,6 +3,8 @@ import { requireAuth } from '../middleware'
 import { getAuth } from '@clerk/express'
 import {pool} from '../db'
 import { parseJobPosting } from '../parseJobPosting'
+import { getEmbedding } from '../getEmbedding';
+import { cosineSimilarity } from '../similarity';
 
 const router = Router();
 
@@ -209,6 +211,50 @@ router.get('/:id/matches', requireAuth, async (req, res) =>{
         );
         res.json(result.rows);
     } catch (err) {
+        res.status(500).json({error: String(err)});
+    }
+});
+
+router.post('/:id/matches', requireAuth, async (req, res) =>{
+    const { userId } = getAuth(req);
+    const applicationID = req.params.id
+    try{
+        const auth = await pool.query('SELECT applications.* FROM applications JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 AND companies.user_id = $2',
+            [applicationID, userId]
+        );
+        if(auth.rows.length === 0){
+            return res.status(404).json({error:'Application not found'});
+        }
+        
+        const resumeQuery = await pool.query('SELECT resumes.resume_text FROM resumes WHERE user_id = $1',
+            [userId]
+        );
+        if(resumeQuery.rows.length === 0){
+            return res.status(400).json({error:'Resume not found'});
+        }
+
+        const job_posting = await pool.query('SELECT job_postings.* FROM job_postings WHERE job_postings.application_id = $1',
+            [applicationID]
+        )
+        if(job_posting.rows.length === 0){
+            return res.status(400).json({error:'No job postings exist'})
+        }
+
+        const jobPostingRawText = job_posting.rows[0].raw_text;
+        const jobPostingParsedData = job_posting.rows[0].parsed_data;
+        const resumeTextSnapshot = resumeQuery.rows[0].resume_text;
+        const resumeEmbedding = await getEmbedding(resumeTextSnapshot)
+        const rawTextEmbedding = await getEmbedding(jobPostingRawText);
+        const similarityScore = cosineSimilarity(resumeEmbedding, rawTextEmbedding);
+
+        const result = await pool.query('INSERT INTO matches (score, matched_skills, missing_skills, application_id, resume_text_snapshot) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [similarityScore, [], [], applicationID, resumeTextSnapshot]
+        );
+        res.json(result.rows[0]);
+    } catch (err : any){
+    if(err.code === '23503'){
+      return res.status(400).json({error: 'That application does not exist'});
+    }
         res.status(500).json({error: String(err)});
     }
 });
