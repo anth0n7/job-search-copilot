@@ -5,6 +5,7 @@ import {pool} from '../db'
 import { parseJobPosting } from '../parseJobPosting'
 import { getEmbedding } from '../getEmbedding';
 import { cosineSimilarity } from '../similarity';
+import { compareSkills } from '../compareSkills';
 
 const router = Router();
 
@@ -247,8 +248,17 @@ router.post('/:id/matches', requireAuth, async (req, res) =>{
         const rawTextEmbedding = await getEmbedding(jobPostingRawText);
         const similarityScore = cosineSimilarity(resumeEmbedding, rawTextEmbedding);
 
+        let matchedSkills: string[] = [];
+        let missingSkills: string[] = [];
+
+        if(jobPostingParsedData){
+          const comparedSkills = await compareSkills(resumeTextSnapshot, jobPostingParsedData.required_skills)
+          matchedSkills = comparedSkills.matched_skills;
+          missingSkills = comparedSkills.missing_skills;
+        }
+
         const result = await pool.query('INSERT INTO matches (score, matched_skills, missing_skills, application_id, resume_text_snapshot) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [similarityScore, [], [], applicationID, resumeTextSnapshot]
+            [similarityScore, matchedSkills, missingSkills, applicationID, resumeTextSnapshot]
         );
         res.json(result.rows[0]);
     } catch (err : any){
