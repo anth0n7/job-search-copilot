@@ -35,3 +35,27 @@ export interface InterviewStage {
     completed: boolean | null;
     notes: string | null;
 }
+
+export interface ParsedJobPostingData {
+    seniority: string;
+    required_skills: string[];
+    responsibilities: string[];
+}
+
+export interface JobPosting {
+    id: number;
+    application_id: number;
+    raw_text: string;
+    created_at: string;
+    parsed_data: ParsedJobPostingData | null;
+}
+
+export interface Match{
+    id: number;
+    application_id: number;
+    score: number;
+    matched_skills: string[];
+    missing_skills: string[];
+    resume_text_snapshot: string;
+    created_at: string;
+}
