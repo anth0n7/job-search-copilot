@@ -3,6 +3,7 @@ import { Show, SignInButton, SignUpButton, UserButton} from '@clerk/react';
 import type { Company, Application } from './types';
 import Companies from './Companies';
 import Applications from './Applications';
+import Resumes from './Resumes'
 import ApplicationDetail from './ApplicationDetail'
 import { Routes, Route, Navigate, Link } from 'react-router'
 import { useApi } from './useApi'
@@ -65,12 +66,14 @@ function App() {
       <nav className="flex gap-4 mb-4">
         <Link to="/companies">Companies</Link> 
         <Link to="/applications">Applications</Link> 
+        <Link to="/resumes">Resume</Link>
       </nav>
 
       <ErrorBanner />
 
       <Routes>
         <Route path="/" element={<Navigate to="/applications" replace />} />
+        <Route path='/resumes' element={<Resumes />} />
         <Route path="/companies" element={<Companies companies={companies} setCompanies={setCompanies} onCompanyDeleted={fetchApplications} />} />
         <Route path="/applications" element={<Applications companies={companies} applications={applications} setApplications={setApplications}/>} />
         <Route path="/applications/:id" element={<ApplicationDetail companies={companies} />} />

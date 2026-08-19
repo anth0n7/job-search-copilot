@@ -59,3 +59,10 @@ export interface Match{
     resume_text_snapshot: string;
     created_at: string;
 }
+
+export interface Resume{
+    id: number;
+    user_id: string;
+    updated_at: string;
+    resume_text: string | null;
+}
