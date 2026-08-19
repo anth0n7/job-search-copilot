@@ -6,6 +6,7 @@ import { parseJobPosting } from '../parseJobPosting'
 import { getEmbedding } from '../getEmbedding';
 import { cosineSimilarity } from '../similarity';
 import { compareSkills } from '../compareSkills';
+import { generateSuggestions } from '../generateSuggestions'
 
 const router = Router();
 
@@ -269,21 +270,51 @@ router.post('/:id/matches', requireAuth, async (req, res) =>{
     }
 });
 
-router.put('/:id/suggestions', requireAuth, async (req, res) =>{
+router.post('/:id/suggestions/generate', requireAuth, async (req, res) =>{
     const { userId } = getAuth(req);
     try{
         const applicationID = req.params.id;
-        const { cover_letter_draft, suggested_changes }  = req.body;
         const auth = await pool.query('SELECT applications.id FROM applications JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 AND companies.user_id = $2',
             [applicationID, userId]
         );
         if(auth.rows.length === 0){
             return res.status(404).json({error: 'Application not found'});
         }
-        const result = await pool.query('INSERT INTO suggestions (application_id, cover_letter_draft, suggested_changes) VALUES ($1, $2, $3) ON CONFLICT (application_id) DO UPDATE SET cover_letter_draft = $2, suggested_changes = $3 RETURNING *',
-            [applicationID, cover_letter_draft, JSON.stringify(suggested_changes)]
+
+        const resumeQuery = await pool.query('SELECT * FROM resumes WHERE user_id = $1',
+          [userId]
+        );
+        if (resumeQuery.rows.length === 0){
+            return res.status(400).json({error:'No resume exists'})
+        }
+
+        const jobPostingQuery = await pool.query('SELECT job_postings.* FROM job_postings WHERE job_postings.application_id = $1',
+            [applicationID]
+        )
+        if(jobPostingQuery.rows.length === 0){
+            return res.status(400).json({error:'No job postings exist'})
+        }
+
+        let missingSkills: string[] = [];
+
+        const matchesQuery = await pool.query('SELECT matches.* FROM matches JOIN applications ON matches.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 and companies.user_id = $2 ORDER BY matches.created_at DESC LIMIT 1',
+          [applicationID, userId]
+        );
+
+        if(matchesQuery.rows.length !== 0){
+          missingSkills = matchesQuery.rows[0].missing_skills
+        }
+        
+        const jobPostingRawText = jobPostingQuery.rows[0].raw_text;
+        const resumeText = resumeQuery.rows[0].resume_text;
+
+        const suggestions = await generateSuggestions(resumeText, jobPostingRawText, missingSkills);
+       
+        const result = await pool.query('INSERT INTO suggestions (application_id, suggested_changes, cover_letter_draft) VALUES ($1, $2, $3) ON CONFLICT (application_id) DO UPDATE SET suggested_changes = $2, cover_letter_draft = $3, updated_at = NOW() RETURNING *',
+          [applicationID, JSON.stringify(suggestions.suggested_changes), suggestions.cover_letter_draft]
         )
         res.json(result.rows[0]);
+
     } catch (err) {
         res.status(500).json({error: String(err)});
     }
