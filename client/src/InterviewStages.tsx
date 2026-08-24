@@ -112,22 +112,22 @@ function InterviewStages({applicationID} : InterviewStagesProps){
             <div className="max-w-md mx-auto space-y-3">
                {interview_stages.map((interview_stage) => (
                 <div key={interview_stage.id} className=" bg-gray-800 rounded-lg p-4">
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 p-0.5">
                         <span className="font-medium">Name:</span>
                         <p> {interview_stage.stage_name}</p> 
                     </div>
 
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 p-0.5">
                         <span className="font-medium">Scheduled Date:</span>
                         <p>{new Date(interview_stage.scheduled_date).toLocaleString()}</p>
                     </div>        
 
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 p-0.5">
                         <span className="font-medium">Completed:</span>
                         <p>{interview_stage.completed ? "Yes" : "No"}</p>
                     </div>            
 
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 p-0.5">
                         <span className="font-medium">Notes:</span>
                         <p>{interview_stage.notes}</p>
                     </div>

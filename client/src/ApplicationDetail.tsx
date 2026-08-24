@@ -7,6 +7,7 @@ import InterviewStages from './InterviewStages'
 import ApplicationContacts from './ApplicationContacts'
 import JobPostings from './JobPostings'
 import Matches from './Matches'
+import Suggestions from './Suggestions'
 
 
 interface ApplicationDetailsProp{
@@ -76,6 +77,10 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
 
                     <div>
                         <Matches applicationID={application.id} />
+                    </div>
+
+                    <div>
+                        <Suggestions applicationID={application.id} />
                     </div>
 
                 </div>

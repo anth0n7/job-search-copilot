@@ -66,3 +66,18 @@ export interface Resume{
     updated_at: string;
     resume_text: string | null;
 }
+
+
+export interface SuggestedChange{
+    original: string;
+    suggested: string;
+    reason: string;
+}
+
+export interface Suggestion{
+    id: number;
+    application_id: number;
+    suggested_changes: SuggestedChange [];
+    cover_letter_draft: string;
+    updated_at: string;
+}
