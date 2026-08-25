@@ -102,6 +102,7 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
 
     return(
         <div className="mb-5">
+            <h1 className="flex justify-center font-semibold mb-5">Applications</h1>
             <ul className="max-w-md mx-auto space-y-2">
                 {applications.map((application) => (
                 <li key={application.id} onClick={() => navigate(`/applications/${application.id}`)} className="flex items-center justify-between bg-gray-800 hover:bg-gray-700 rounded-lg p-4 transition-colors cursor-pointer">{application.role_title}

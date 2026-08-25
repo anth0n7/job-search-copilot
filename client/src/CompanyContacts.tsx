@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react'
-import type { Company, Contact } from './types';
+import type { Contact } from './types';
 import { useApi } from './useApi'
 import { useError } from './useError'
 
 interface ContactsProps{
-    companies: Company[]
+    companyID: number;
 }
 
 
 
-function Contacts({companies}: ContactsProps){
+function CompanyContacts({companyID}: ContactsProps){
     const [contacts , setContacts] = useState<Contact[]>([]);
-    const [company_id, setCompanyId] = useState<number | null>(null);
     const [name, setName] = useState('');
     const [role, setRole] = useState('');
     const [email, setEmail] = useState('');
@@ -22,12 +21,12 @@ function Contacts({companies}: ContactsProps){
     const {setErrorMessage} = useError();
 
     useEffect(() =>{
-        apiFetch('/contacts')
+        apiFetch(`/companies/${companyID}/contacts`)
         .then((data) =>{setContacts(data)})
         .catch((err) => {console.error('Failed to fetch contacts', err);
             setErrorMessage(err.message);
         })
-    }, []);
+    }, [companyID]);
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
         e.preventDefault();
@@ -35,7 +34,7 @@ function Contacts({companies}: ContactsProps){
             apiFetch(`/contacts/${editingId}`,{
                 method: 'PUT',
                 headers: {'Content-Type' : 'application/json'},
-                body: JSON.stringify({name, role, email, linkedin_url, notes, company_id})
+                body: JSON.stringify({name, role, email, linkedin_url, notes, company_id: companyID})
             })
             .then((editedContact) =>{
                 setContacts(contacts.map((currentContact) =>(
@@ -50,14 +49,13 @@ function Contacts({companies}: ContactsProps){
             apiFetch(`/contacts`, {
                 method: 'POST',
                 headers: {'Content-Type' : 'application/json'},
-                body: JSON.stringify({name, role, email, linkedin_url, notes, company_id})
+                body: JSON.stringify({name, role, email, linkedin_url, notes, company_id: companyID})
             })
             .then((contact) =>{setContacts([contact, ...contacts])})
             .catch((err) =>{console.error('Failed to fetch contact:', err);
                 setErrorMessage(err.message);
             })
         }
-        setCompanyId(null);
         setEmail('');
         setLinkedinUrl('');
         setEditingId(null);
@@ -82,7 +80,6 @@ function Contacts({companies}: ContactsProps){
     }
 
     function handleEdit(editedContact: Contact){
-        setCompanyId(editedContact.company_id);
         setEmail(editedContact.email ?? '');
         setLinkedinUrl(editedContact.linkedin_url ?? '');
         setEditingId(editedContact.id);
@@ -92,7 +89,6 @@ function Contacts({companies}: ContactsProps){
     }
 
     function handleCancel(){
-        setCompanyId(null);
         setEmail('');
         setLinkedinUrl('');
         setEditingId(null);
@@ -105,14 +101,42 @@ function Contacts({companies}: ContactsProps){
 
 
     return(
-        <div className="mb-5">
+        <div className="mt-6 border-t pt-4">
+            <h1 className="flex justify-center font-medium mb-2">Contacts</h1>
             <ul className="max-w-md mx-auto space-y-2">
               {contacts.map((contact) =>(
-                <li className="flex items-center justify-between bg-gray-800 rounded-lg p-4" key={contact.id}>{contact.name}
-                <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={() => handleDelete(contact.id)}>Delete</button>
-                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" onClick={() => handleEdit(contact)}>Edit</button>
-                </div>
+                <li className="flex items-center justify-between bg-gray-800 rounded-lg p-4" key={contact.id}>
+                    <div className="flex flex-col gap-1">
+                        <div className="flex gap-1">
+                            <span className="font-medium">Name:</span>
+                            <p>{contact.name}</p>
+                        </div>
+                        
+                        <div className="flex gap-1">
+                            <span className="font-medium">Role:</span>
+                            <p>{contact.role}</p>
+                        </div>
+
+                        <div className="flex gap-1">
+                            <span className="font-medium">Email:</span>
+                            <p>{contact.email}</p>
+                        </div>
+
+                        <div className="flex gap-1">
+                            <span className="font-medium">LinkedIn:</span>
+                            <p>{contact.linkedin_url}</p>
+                        </div>
+
+                        <div className="flex gap-1">
+                            <span className="font-medium">Notes:</span>
+                            <p>{contact.notes}</p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={() => handleDelete(contact.id)}>Delete</button>
+                        <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" onClick={() => handleEdit(contact)}>Edit</button>
+                    </div>
                 </li>  
               ))}
             </ul>
@@ -133,13 +157,6 @@ function Contacts({companies}: ContactsProps){
                 <label htmlFor="notes" className="block text-sm font-medium text-gray-300 mb-1">Notes</label>
                 <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="notes" value={notes} onChange={(e) => setNotes(e.target.value)}/>
 
-                <label htmlFor="company_id" className="block text-sm font-medium text-gray-300 mb-1">Company</label>
-                <select id="company_id" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={company_id ?? ''} onChange={(e) => setCompanyId(Number(e.target.value))} required>
-                <option value="" disabled>Select a company...</option> 
-                {companies.map((company) =>(
-                    <option key={company.id} value={company.id}>{company.name}</option>
-                ))}
-                </select>
                 <div className="flex justify-center gap-2">
                     <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" type="submit">{editingId === null ? "Add Contact" : "Save Changes"}</button> 
                     {editingId !== null && <button className="px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600" type="button" onClick={() => handleCancel()}>Cancel</button>}
@@ -150,4 +167,4 @@ function Contacts({companies}: ContactsProps){
     )
 }
 
-export default Contacts
+export default CompanyContacts

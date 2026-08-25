@@ -53,14 +53,17 @@ function App() {
   // show when is clerks way of conditionally rendering
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
-      <Show when="signed-out">
-        <SignInButton mode="modal" />
-        <SignUpButton mode="modal" />
-      </Show>
-      <Show when="signed-in">
-        <UserButton />
-      </Show>
-
+      <div className="flex justify-end gap-2">
+        <Show when="signed-out">
+          <SignInButton mode="modal" />
+          <SignUpButton mode="modal" />
+        </Show>
+      </div>
+      <div className="flex justify-end">
+        <Show when="signed-in">
+          <UserButton />
+        </Show>
+      </div>
       <h1 className="text-2xl font-bold text-gray-100 mb-5">Job Search Copilot</h1>
 
       <nav className="flex gap-4 mb-4">
@@ -74,7 +77,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/applications" replace />} />
         <Route path='/resumes' element={<Resumes />} />
-        <Route path="/companies" element={<Companies companies={companies} setCompanies={setCompanies} onCompanyDeleted={fetchApplications} />} />
+        <Route path="/companies" element={<Companies companies={companies} applications={applications} setCompanies={setCompanies} onCompanyDeleted={fetchApplications} />} />
         <Route path="/applications" element={<Applications companies={companies} applications={applications} setApplications={setApplications}/>} />
         <Route path="/applications/:id" element={<ApplicationDetail companies={companies} />} />
       </Routes>

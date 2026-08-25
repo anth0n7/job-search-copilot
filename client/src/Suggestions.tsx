@@ -51,6 +51,7 @@ function Suggestions({applicationID}: SuggestionProps){
                 {suggestions.suggested_changes.map((change, index) =>(
                     
                     <div key={index} className="bg-gray-800 p-4 rounded-lg mb-5">
+                        <h2 className="flex justify-center font-medium">Suggested Resume Change #{index + 1}</h2>
                         <div className="p-4">
                             <span className="font-medium">Original:</span>
                             <p>{change.original}</p>

@@ -64,17 +64,17 @@ function JobPostings({applicationID} : JobPostingProps){
             {job_posting?.parsed_data && (
                 <div className="flex flex-col gap-3">
                 <h2 className="flex justify-center font-semibold mb-2">Parsed Data</h2>
-                    <div className="flex gap-1 p-4">
+                    <div className="flex gap-1 p-2">
                         <span className="font-medium">Seniority:</span>
                         <p>{job_posting.parsed_data.seniority}</p>
                     </div>
 
-                    <div className="flex flex-col gap-1 p-4">
+                    <div className="flex flex-col gap-1 p-2">
                         <span className="font-medium">Required Skills:</span>
                         <p>{job_posting.parsed_data.required_skills.join(", ")}</p>
                     </div>
 
-                    <div className="flex flex-col gap-1 p-4">
+                    <div className="flex flex-col gap-1 p-2">
                         <span className="font-medium">Responsibilities:</span>
                         <p>{job_posting.parsed_data.responsibilities.join(", ")}</p>
                     </div>

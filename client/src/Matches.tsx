@@ -46,17 +46,17 @@ function Matches({applicationID} : MatchesProps){
             {matches.slice(0,3).map((match) => (
                 <div key={match.id} className=" bg-gray-800 rounded-lg p-4">
                   <div className="space-y-3">
-                    <div className="flex flex-col p-2">
+                    <div className="flex gap-1 p-1">
                         <span className="font-medium">Score:</span>
                         <p>{Math.round(match.score * 100)}%</p>
                     </div>
 
-                    <div className="flex flex-col p-2">
+                    <div className="flex flex-col p-1">
                         <span className="font-medium">Matched Skills:</span>
                         <p>{match.matched_skills.join(', ')}</p>
                     </div>
 
-                    <div className="flex flex-col p-2">
+                    <div className="flex flex-col p-1">
                         <span className="font-medium">Missing Skills:</span>
                         <p>{match.missing_skills.join(', ')}</p>
                     </div>
