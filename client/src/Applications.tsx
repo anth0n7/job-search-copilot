@@ -3,6 +3,7 @@ import type { Company, Application} from './types';
 import { useNavigate } from 'react-router'
 import { useApi } from './useApi'
 import { useError } from './useError'
+import { Trash2, Pencil, Plus, Check, X} from 'lucide-react';
 
 interface ApplicationsProps {
     companies: Company[];
@@ -107,8 +108,14 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
                 {applications.map((application) => (
                 <li key={application.id} onClick={() => navigate(`/applications/${application.id}`)} className="flex items-center justify-between bg-gray-800 hover:bg-gray-700 rounded-lg p-4 transition-colors cursor-pointer">{application.role_title}
                 <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400 cursor-pointer" onClick={(e) => {e.stopPropagation(); handleDelete(application.id);}}>Delete</button>
-                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={(e) => {e.stopPropagation(); handleEdit(application);}}>Edit</button>
+                    <button className="flex items-center gap-1 px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400 cursor-pointer" onClick={(e) => {e.stopPropagation(); handleDelete(application.id);}}>
+                        <Trash2 size={16} />
+                        Delete
+                    </button>
+                    <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={(e) => {e.stopPropagation(); handleEdit(application);}}>
+                        <Pencil size={16} />
+                        Edit
+                    </button>
                 </div>
                 </li> 
                 ))}
@@ -141,8 +148,14 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
                     ))}
                 </select>
                 <div className="flex justify-center gap-2">
-                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" type="submit">{editingId === null ? "Add Application" : "Save Changes"}</button>
-                    {editingId !== null && <button type="button" className="px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600" onClick={() => handleCancel()}>Cancel</button>}
+                    <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" type="submit">
+                        {editingId === null ? <Plus size={16} /> : <Check size={16} />}
+                        {editingId === null ? "Add Application" : "Save Changes"}
+                    </button>
+                        {editingId !== null && <button type="button" className="flex items-center gap-1 px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600" onClick={() => handleCancel()}>
+                        <X size={16} />
+                        Cancel
+                    </button>}
                 </div>
             </form>
 

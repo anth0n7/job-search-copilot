@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import type { InterviewStage } from './types';
 import { useApi } from './useApi'
 import { useError } from './useError'
+import { Trash2, Pencil, Plus, Check, X} from 'lucide-react';
+
 
 
 interface InterviewStagesProps{
@@ -133,15 +135,24 @@ function InterviewStages({applicationID} : InterviewStagesProps){
                     </div>
 
                     <div className=" mt-2 flex gap-2">
-                        <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400 cursor-pointer" onClick={() => handleDelete(interview_stage.id)}>Delete</button>
-                        <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={() => handleEdit(interview_stage)}>Edit Interview Stage</button>
+                        <button className="flex items-center gap-1 px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400 cursor-pointer" onClick={() => handleDelete(interview_stage.id)}>
+                            <Trash2 size={16} />
+                            Delete
+                        </button>
+                        <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={() => handleEdit(interview_stage)}>
+                            <Pencil size={16} />
+                            Edit Interview Stage
+                        </button>
                     </div>
                 </div>
                ))} 
             </div>
 
             <div className="flex justify-center mt-3">
-                <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={() => setIsModalOpen(true)}>Add Interview Stage</button>
+                <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={() => setIsModalOpen(true)}>
+                    <Plus size={16} />
+                    Add Interview Stage
+                </button>
             </div>
             
            {isModalOpen && (
@@ -163,8 +174,14 @@ function InterviewStages({applicationID} : InterviewStagesProps){
                         <input id="notes" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={notes} onChange={(e) => setNotes(e.target.value)}/>
 
                         <div className="flex justify-center gap-2">
-                            <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" type="submit">{editingId === null ? "Add Interview Stage" : "Save Changes"}</button> 
-                            <button className="px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600 cursor-pointer" type="button" onClick={() => handleCancel()}>Cancel</button>
+                            <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" type="submit">
+                                {editingId === null ? <Plus size={16} />: <Check size={16} />}
+                                {editingId === null ? "Add Interview Stage" : "Save Changes"}
+                            </button> 
+                            <button className="flex items-center gap-1 px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600 cursor-pointer" type="button" onClick={() => handleCancel()}>
+                                <X size={16} />
+                                Cancel
+                            </button>
                         </div>
                     </form>
                </div>

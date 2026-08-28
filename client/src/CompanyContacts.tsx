@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Contact } from './types';
 import { useApi } from './useApi'
 import { useError } from './useError'
+import { Trash2, Pencil, Plus, Check, X} from 'lucide-react';
 
 interface ContactsProps{
     companyID: number;
@@ -134,8 +135,14 @@ function CompanyContacts({companyID}: ContactsProps){
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={() => handleDelete(contact.id)}>Delete</button>
-                        <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" onClick={() => handleEdit(contact)}>Edit</button>
+                        <button className="flex items-center gap-1 px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={() => handleDelete(contact.id)}>
+                            <Trash2 size={16} />
+                            Delete
+                            </button>
+                        <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" onClick={() => handleEdit(contact)}>
+                            <Pencil size={16} />
+                            Edit
+                        </button>
                     </div>
                 </li>  
               ))}
@@ -158,8 +165,14 @@ function CompanyContacts({companyID}: ContactsProps){
                 <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="notes" value={notes} onChange={(e) => setNotes(e.target.value)}/>
 
                 <div className="flex justify-center gap-2">
-                    <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" type="submit">{editingId === null ? "Add Contact" : "Save Changes"}</button> 
-                    {editingId !== null && <button className="px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600" type="button" onClick={() => handleCancel()}>Cancel</button>}
+                    <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" type="submit">
+                        {editingId === null ? <Plus size={16} />: <Check size={16} />}
+                        {editingId === null ? "Add Contact" : "Save Changes"}
+                    </button> 
+                    {editingId !== null && <button className="flex items-center gap-1 px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600" type="button" onClick={() => handleCancel()}>
+                        <X size={16} />
+                        Cancel
+                        </button>}
                 </div>
             </form>
             

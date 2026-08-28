@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApi } from './useApi'
 import { useError } from './useError'
 import type { Match } from './types'
+import { Trash2, Pencil, Plus, Check, X, Sparkles} from 'lucide-react';
 
 
 interface MatchesProps{
@@ -67,7 +68,10 @@ function Matches({applicationID} : MatchesProps){
         </div>
 
         <div className="flex justify-center mt-3">    
-            <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={() => handleMatches()}>Run Match</button>
+            <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={() => handleMatches()}>
+              <Sparkles size={16} />
+              Run Match
+              </button>
         </div>
 
         </div>

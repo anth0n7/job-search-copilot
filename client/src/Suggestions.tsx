@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApi } from './useApi'
 import { useError } from './useError'
 import type { Suggestion } from './types'
+import {Sparkles, Loader2} from 'lucide-react';
 
 interface SuggestionProps{
     applicationID: number;
@@ -44,7 +45,10 @@ function Suggestions({applicationID}: SuggestionProps){
         <div className="mt-6 border-t pt-4">
             <h1 className="flex justify-center font-semibold mb-2">Resume Suggestions and Cover Letter Draft</h1>
             <div className="flex justify-center p-4">
-                <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" disabled={isGenerating} onClick={() => handleSuggestions()}>{isGenerating === false ? "Generate Suggestions" : "Generating..."}</button> 
+                <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 justify-center" disabled={isGenerating} onClick={() => handleSuggestions()}>
+                    {isGenerating === false ? <Sparkles size={16} /> : <Loader2 size={16} className="animate-spin" />}
+                    {isGenerating === false ? "Generate Suggestions" : "Generating..."}
+                </button>
             </div>
             {suggestions && (
                 <div>

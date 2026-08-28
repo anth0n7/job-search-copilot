@@ -3,6 +3,7 @@ import type { Company, Application } from './types';
 import { useApi } from './useApi'
 import { useError } from './useError'
 import CompanyContacts from './CompanyContacts';
+import { Trash2, Plus, Check, X} from 'lucide-react';
 
 interface CompaniesProps {
     companies : Company [];
@@ -93,7 +94,10 @@ function Companies({companies, applications, setCompanies, onCompanyDeleted}: Co
                     {companies.map((company) =>(
                     <li key={company.id} className="flex items-center justify-between bg-gray-800 hover:bg-gray-700 rounded-lg p-4 transition-colors cursor-pointer" onClick={() => handleViewCompany(company)}>{company.name}
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                        <button className="px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={() => handleDelete(company.id)}>Delete</button>
+                        <button className="flex items-center gap-1 px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400" onClick={() => handleDelete(company.id)}>
+                            <Trash2 size={16} />
+                            Delete
+                        </button>
                     </div>
                     </li>
                     ))}
@@ -104,17 +108,17 @@ function Companies({companies, applications, setCompanies, onCompanyDeleted}: Co
                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center" onClick={() => setSelectedCompany(null)}>
                     <div onClick={(e) => e.stopPropagation()} className="bg-gray-800 rounded-lg p-4 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                         <h1 className="flex justify-center font-medium mb-2">Company Info</h1>
-                        <div>
+                        <div className="p-2">
                             <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="modal_name">Name:</label>
                             <input id="modal_name" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" required value={modalName} onChange={(e) => setModalName(e.target.value)}/>    
                         </div>
 
-                        <div>
+                        <div className="p-2">
                             <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="modal_website">Website:</label>
                             <input id="modal_website" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={modalWebsite} onChange={(e) => setModalWebsite(e.target.value)}/>    
                         </div>
 
-                        <div>
+                        <div className="p-2">
                             <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="modal_notes">Notes:</label>
                             <input id="modal_notes" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={modalNotes} onChange={(e) => setModalNotes(e.target.value)}/>    
                         </div>
@@ -130,15 +134,21 @@ function Companies({companies, applications, setCompanies, onCompanyDeleted}: Co
                          <CompanyContacts companyID={selectedCompany.id} />
 
                          <div className="flex justify-center gap-2 mt-4">
-                            <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" type="button" onClick={() => handleSaveModal()}>Save</button> 
-                            <button className="px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600 cursor-pointer" type="button" onClick={() => setSelectedCompany(null)}>Cancel</button>
+                            <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" type="button" onClick={() => handleSaveModal()}>
+                                <Check size={16} />
+                                Save
+                            </button> 
+                            <button className="flex items-center gap-1 px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600 cursor-pointer" type="button" onClick={() => setSelectedCompany(null)}>
+                                <X size={16} />
+                                Cancel
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
             
             <div>
-                <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-gray-800 rounded-lg p-4 mt-4 space-y-4">
+                <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-gray-800 rounded-lg mt-4 p-4 space-y-4">
                     <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">Name</label>
                     <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="name" value={name} required onChange={(e) => setName(e.target.value)}/>
 
@@ -149,7 +159,10 @@ function Companies({companies, applications, setCompanies, onCompanyDeleted}: Co
                     <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="notes" value={notes} onChange={(e) => setNotes(e.target.value)}/>
 
                     <div className="flex justify-center gap-2">
-                        <button className="px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" type="submit">Add Company</button>
+                        <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" type="submit">
+                            <Plus size={16} />
+                            Add Company
+                        </button>
                     </div>
                 </form>
             </div>
