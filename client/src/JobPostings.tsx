@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApi } from './useApi'
 import { useError } from './useError'
 import type { JobPosting } from './types'
-import { Trash2, Pencil, Plus, Check, X, Sparkles} from 'lucide-react';
+import { Check, Sparkles} from 'lucide-react';
 
 interface JobPostingProps{
     applicationID: number;
@@ -39,7 +39,7 @@ function JobPostings({applicationID} : JobPostingProps){
         })
         .catch((err) =>{console.error('Failed to fetch job posting:', err);
                 setErrorMessage(err.message);
-            })       
+            })
     }
 
     function handleParse(){
@@ -51,38 +51,38 @@ function JobPostings({applicationID} : JobPostingProps){
         })
         .catch((err) =>{console.error('Failed to fetch job posting:', err);
                 setErrorMessage(err.message);
-            })  
+            })
     }
 
     return(
-        <div className="mt-6 border-t pt-4">
-            <h1 className="flex justify-center font-semibold mb-2">Job Posting</h1>
-            <textarea id="job_description" value={raw_text} className="bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500 w-full" rows={8} onChange={(e) => setRawText(e.target.value)}></textarea>
-            <div className="flex gap-2 justify-center mt-3 mb-3">
-                <button disabled={!hasUnsavedChanges} className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => handleSave()}>
+        <div className="mt-6 divider pt-4">
+            <h1 className="section-title mb-2">Job Posting</h1>
+            <textarea id="job_description" value={raw_text} className="input-field" rows={8} onChange={(e) => setRawText(e.target.value)}></textarea>
+            <div className="flex gap-2 mt-3 mb-3">
+                <button disabled={!hasUnsavedChanges} className="btn-primary" onClick={() => handleSave()}>
                     <Check size={16} />
                     Save
                 </button>
 
-                {job_posting != null && <button disabled={hasUnsavedChanges} className="flex items-center gap-1 px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => handleParse()}>
+                {job_posting != null && <button disabled={hasUnsavedChanges} className="btn-secondary" onClick={() => handleParse()}>
                     <Sparkles size={16} />
                     Parse Job Posting
                 </button>}
             </div>
             {job_posting?.parsed_data && (
-                <div className="flex flex-col gap-3">
-                <h2 className="flex justify-center font-semibold mb-2">Parsed Data</h2>
-                    <div className="flex gap-1 p-2">
+                <div className="card p-4 space-y-3">
+                <h2 className="section-title">Parsed Data</h2>
+                    <div className="flex gap-1">
                         <span className="font-medium">Seniority:</span>
                         <p>{job_posting.parsed_data.seniority}</p>
                     </div>
 
-                    <div className="flex flex-col gap-1 p-2">
+                    <div className="flex flex-col gap-1">
                         <span className="font-medium">Required Skills:</span>
                         <p>{job_posting.parsed_data.required_skills.join(", ")}</p>
                     </div>
 
-                    <div className="flex flex-col gap-1 p-2">
+                    <div className="flex flex-col gap-1">
                         <span className="font-medium">Responsibilities:</span>
                         <p>{job_posting.parsed_data.responsibilities.join(", ")}</p>
                     </div>

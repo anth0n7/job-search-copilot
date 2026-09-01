@@ -8,10 +8,11 @@ import ApplicationContacts from './ApplicationContacts'
 import JobPostings from './JobPostings'
 import Matches from './Matches'
 import Suggestions from './Suggestions'
+import StatusBadge  from './StatusBadge';
 
 
 interface ApplicationDetailsProp{
-    companies: Company []    
+    companies: Company []
 }
 
 function ApplicationDetail({companies}: ApplicationDetailsProp){
@@ -35,26 +36,32 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
     //we need the condition because JSX runs before the data exists and the initial value is null
     return(
         <div className="flex justify-center">
+            {application === null && (
+                <div className="max-w-3xl w-full space-y-3">
+                    <div className="skeleton h-10 w-2/3 mx-auto" />
+                    <div className="skeleton h-40" />
+                </div>
+            )}
             {application !== null && (
-                <div className=" border-2 p-10 rounded-3xl max-w-2xl mx-auto min-h-96">
-                    <h1 className="flex justify-center font-semibold">{application.role_title} at {company?.name}</h1>
-                    
+                <div className="card p-8 max-w-3xl w-full">
+                    <h1 className="page-title text-center">{application.role_title} at {company?.name}</h1>
+
                     {company && (
-                       <div className="mt-6 border-t pt-4">
+                       <div className="mt-6 divider pt-4">
                             <div className="flex gap-1">
                                 <span className="font-medium">Company Website:</span>
                                 <a href={company.website} className="text-sky-300 hover:underline">{company.website}</a>
                             </div>
 
-                            <div className="mt-6 border-t pt-4">
+                            <div className="mt-6 divider pt-4">
                                 <ApplicationContacts companyID={company.id} />
                             </div>
                         </div>
                     )}
-                
-                    <div className="mt-4 border-t flex gap-1 pt-4">
+
+                    <div className="mt-4 divider flex items-center gap-2 pt-4">
                         <span className="font-medium">Status:</span>
-                        <p>{application.status}</p>
+                        <StatusBadge status={application.status} />
                     </div>
 
                     <div className="flex gap-1">
@@ -64,10 +71,10 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
 
                     <div className="flex gap-1">
                         <span className="font-medium">Job URL:</span>
-                        <a href = {application.job_posting_url} target="_blank" className="text-sky-300 hover:underline">{application.job_posting_url}</a>
+                        <a href = {application.job_posting_url} target="_blank" className="text-sky-300 hover:underline transition-colors duration-150">{application.job_posting_url}</a>
                     </div>
 
-                    <div className="mt-6 border-t pt-4">
+                    <div className="mt-6 divider pt-4">
                         <InterviewStages applicationID={application.id} />
                     </div>
 

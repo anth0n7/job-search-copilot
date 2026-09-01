@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import type { InterviewStage } from './types';
 import { useApi } from './useApi'
 import { useError } from './useError'
-import { Trash2, Pencil, Plus, Check, X} from 'lucide-react';
+import { Trash2, Pencil, Plus, Check, X, CalendarClock} from 'lucide-react';
+import Modal from './Modal';
+import ConfirmDialog from './ConfirmDialog';
 
 
 
@@ -12,12 +14,14 @@ interface InterviewStagesProps{
 
 function InterviewStages({applicationID} : InterviewStagesProps){
     const [interview_stages, setInterviewStages] = useState<InterviewStage[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [stage_name, setStageName] = useState('');
     const [scheduled_date, setScheduledDate] = useState('');
     const [completed, setCompleted] = useState<boolean>(false);
     const [notes, setNotes] = useState('');
     const [editingId, setEditingId] = useState<number | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
     const apiFetch = useApi();
     const {setErrorMessage} = useError();
 
@@ -29,6 +33,7 @@ function InterviewStages({applicationID} : InterviewStagesProps){
         .catch((err) =>{console.error("Failed to fetch interview stages:", err);
             setErrorMessage(err.message);
         })
+        .finally(() => setIsLoading(false));
     } , [applicationID]);
 
     function handleDelete(deletedId: number){
@@ -44,7 +49,8 @@ function InterviewStages({applicationID} : InterviewStagesProps){
         .catch((err) => {
             console.error('Failed to fetch interview stages:', err);
             setErrorMessage(err.message);
-        }) 
+        })
+        .finally(() => setPendingDeleteId(null));
     }
 
     function handleEdit(editedInterviewStage: InterviewStage){
@@ -53,7 +59,7 @@ function InterviewStages({applicationID} : InterviewStagesProps){
         setEditingId(editedInterviewStage.id);
         setNotes(editedInterviewStage.notes ?? '');
         setScheduledDate(editedInterviewStage.scheduled_date ?? '');
-        setStageName(editedInterviewStage.stage_name);   
+        setStageName(editedInterviewStage.stage_name);
     }
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
@@ -68,7 +74,7 @@ function InterviewStages({applicationID} : InterviewStagesProps){
             .then((editedInterviewStage) =>{
                 setInterviewStages(interview_stages.map((current_interview_stage) =>(
                     current_interview_stage.id === editingId ? editedInterviewStage : current_interview_stage
-                ))); 
+                )));
             })
             .catch((err) =>{console.error('Failed to fetch interview stages:', err);
                 setErrorMessage(err.message);
@@ -78,8 +84,8 @@ function InterviewStages({applicationID} : InterviewStagesProps){
             apiFetch('/interview_stages',{
                 method: 'POST',
                headers: {'Content-Type' : 'application/json'},
-               body: JSON.stringify({application_id: applicationID, completed, notes, scheduled_date: dateToSend, stage_name})    
-            })   
+               body: JSON.stringify({application_id: applicationID, completed, notes, scheduled_date: dateToSend, stage_name})
+            })
             .then((interview_stage) =>{
                 setInterviewStages([interview_stage, ...interview_stages]);
             })
@@ -108,85 +114,107 @@ function InterviewStages({applicationID} : InterviewStagesProps){
 
 
     return (
-        
+
         <div>
-            <h1 className="flex justify-center font-semibold">Interview Stages:</h1>
-            <div className="max-w-md mx-auto space-y-3">
-               {interview_stages.map((interview_stage) => (
-                <div key={interview_stage.id} className=" bg-gray-800 rounded-lg p-4">
-                    <div className="flex gap-1 p-0.5">
-                        <span className="font-medium">Name:</span>
-                        <p> {interview_stage.stage_name}</p> 
-                    </div>
+            <h1 className="section-title text-center mb-3">Interview Stages</h1>
 
-                    <div className="flex gap-1 p-0.5">
-                        <span className="font-medium">Scheduled Date:</span>
-                        <p>{new Date(interview_stage.scheduled_date).toLocaleString()}</p>
-                    </div>        
-
-                    <div className="flex gap-1 p-0.5">
-                        <span className="font-medium">Completed:</span>
-                        <p>{interview_stage.completed ? "Yes" : "No"}</p>
-                    </div>            
-
-                    <div className="flex gap-1 p-0.5">
-                        <span className="font-medium">Notes:</span>
-                        <p>{interview_stage.notes}</p>
-                    </div>
-
-                    <div className=" mt-2 flex gap-2">
-                        <button className="flex items-center gap-1 px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400 cursor-pointer" onClick={() => handleDelete(interview_stage.id)}>
-                            <Trash2 size={16} />
-                            Delete
-                        </button>
-                        <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={() => handleEdit(interview_stage)}>
-                            <Pencil size={16} />
-                            Edit Interview Stage
-                        </button>
-                    </div>
+            {isLoading && (
+                <div className="max-w-md mx-auto space-y-3">
+                    <div className="skeleton h-24" />
                 </div>
-               ))} 
-            </div>
+            )}
+
+            {!isLoading && interview_stages.length === 0 && (
+                <div className="max-w-md mx-auto text-center py-4">
+                    <CalendarClock size={22} className="mx-auto text-slate-500 mb-2" />
+                    <p className="muted text-sm">No interview stages yet</p>
+                </div>
+            )}
+
+            {!isLoading && interview_stages.length > 0 && (
+                <div className="max-w-md mx-auto space-y-3">
+                   {interview_stages.map((interview_stage) => (
+                    <div key={interview_stage.id} className="card p-4">
+                        <div className="flex gap-1 p-0.5">
+                            <span className="font-medium">Name:</span>
+                            <p> {interview_stage.stage_name}</p>
+                        </div>
+
+                        <div className="flex gap-1 p-0.5">
+                            <span className="font-medium">Scheduled Date:</span>
+                            <p>{new Date(interview_stage.scheduled_date).toLocaleString()}</p>
+                        </div>
+
+                        <div className="flex gap-1 p-0.5">
+                            <span className="font-medium">Completed:</span>
+                            <p>{interview_stage.completed ? "Yes" : "No"}</p>
+                        </div>
+
+                        <div className="flex gap-1 p-0.5">
+                            <span className="font-medium">Notes:</span>
+                            <p>{interview_stage.notes}</p>
+                        </div>
+
+                        <div className="mt-2 flex gap-2">
+                            <button className="btn-danger" onClick={() => setPendingDeleteId(interview_stage.id)}>
+                                <Trash2 size={16} />
+                                Delete
+                            </button>
+                            <button className="btn-primary" onClick={() => handleEdit(interview_stage)}>
+                                <Pencil size={16} />
+                                Edit Interview Stage
+                            </button>
+                        </div>
+                    </div>
+                   ))}
+                </div>
+            )}
 
             <div className="flex justify-center mt-3">
-                <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={() => setIsModalOpen(true)}>
+                <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
                     <Plus size={16} />
                     Add Interview Stage
                 </button>
             </div>
-            
-           {isModalOpen && (
-             <div className="fixed inset-0 bg-black/50 flex items-center justify-center" onClick={() => setIsModalOpen(false)}>
-                <div onClick={(e) => e.stopPropagation()} className="bg-gray-800 rounded-lg p-4 max-w-md w-full">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="stage_name">Stage Name</label>
-                        <input id="stage_name" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={stage_name} onChange={(e) => setStageName(e.target.value)}/>
 
-                        <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="scheduled_date">Scheduled Date</label>
-                        <input id="scheduled_date" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={scheduled_date} type="datetime-local" onChange={(e) => setScheduledDate(e.target.value)}/>
+           {isModalOpen && (
+             <Modal title={editingId === null ? "Add Interview Stage" : "Edit Interview Stage"} onClose={handleCancel}>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <label className="form-label" htmlFor="stage_name">Stage Name</label>
+                        <input id="stage_name" className="input-field" value={stage_name} onChange={(e) => setStageName(e.target.value)}/>
+
+                        <label className="form-label" htmlFor="scheduled_date">Scheduled Date</label>
+                        <input id="scheduled_date" className="input-field" value={scheduled_date} type="datetime-local" onChange={(e) => setScheduledDate(e.target.value)}/>
 
                         <div className="flex items-center gap-2">
-                            <input id="completed" checked={completed} type="checkbox" className="h-5 w-5 rounded border-gray-700 bg-gray-900 text-sky-500 focus:ring-2 focus:ring-sky-500" onChange={(e) => setCompleted(e.target.checked)}/>
-                            <label htmlFor="completed" className="text-sm font-medium text-gray-300">Completed</label>
+                            <input id="completed" checked={completed} type="checkbox" className="h-5 w-5 rounded border-white/10 bg-slate-950/60 text-sky-500 focus:ring-2 focus:ring-sky-500" onChange={(e) => setCompleted(e.target.checked)}/>
+                            <label htmlFor="completed" className="text-sm font-medium text-slate-300">Completed</label>
                         </div>
 
-                        <label className="block text-sm font-medium text-gray-300 mb-1" htmlFor="notes">Notes</label>
-                        <input id="notes" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={notes} onChange={(e) => setNotes(e.target.value)}/>
+                        <label className="form-label" htmlFor="notes">Notes</label>
+                        <input id="notes" className="input-field" value={notes} onChange={(e) => setNotes(e.target.value)}/>
 
-                        <div className="flex justify-center gap-2">
-                            <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" type="submit">
-                                {editingId === null ? <Plus size={16} />: <Check size={16} />}
-                                {editingId === null ? "Add Interview Stage" : "Save Changes"}
-                            </button> 
-                            <button className="flex items-center gap-1 px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600 cursor-pointer" type="button" onClick={() => handleCancel()}>
+                        <div className="flex justify-end gap-2">
+                            <button className="btn-secondary" type="button" onClick={() => handleCancel()}>
                                 <X size={16} />
                                 Cancel
                             </button>
+                            <button className="btn-primary" type="submit">
+                                {editingId === null ? <Plus size={16} />: <Check size={16} />}
+                                {editingId === null ? "Add Interview Stage" : "Save Changes"}
+                            </button>
                         </div>
                     </form>
-               </div>
-            </div>
+             </Modal>
            )}
+
+            <ConfirmDialog
+                open={pendingDeleteId !== null}
+                title="Delete interview stage?"
+                message="This will permanently remove this interview stage."
+                onConfirm={() => pendingDeleteId !== null && handleDelete(pendingDeleteId)}
+                onCancel={() => setPendingDeleteId(null)}
+            />
 
         </div>
     )

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApi } from './useApi'
 import { useError } from './useError'
 import type { Match } from './types'
-import { Trash2, Pencil, Plus, Check, X, Sparkles} from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 
 interface MatchesProps{
@@ -13,7 +13,7 @@ function Matches({applicationID} : MatchesProps){
     const apiFetch = useApi();
     const {setErrorMessage} = useError();
     const [matches, setMatches] = useState<Match[]>([])
-    
+
 
     useEffect(() =>{
       apiFetch(`/applications/${applicationID}/matches`)
@@ -32,51 +32,52 @@ function Matches({applicationID} : MatchesProps){
         })
         .then((match) => {
             setMatches([match, ...matches]);
-        })  
+        })
         .catch((err) => {console.error("Failed to fetch match:", err)
         setErrorMessage(err.message);
-      })                 
+      })
     }
 
-    
+
 
     return(
-        <div className="mt-6 border-t pt-4">
-        <h1 className="flex justify-center font-semibold mb-2">Matches</h1>
-        <div className="max-w-md mx-auto space-y-3">
+        <div className="mt-6 divider pt-4">
+        <h1 className="section-title mb-2">Matches</h1>
+        <div className="space-y-3">
             {matches.slice(0,3).map((match) => (
-                <div key={match.id} className=" bg-gray-800 rounded-lg p-4">
-                  <div className="space-y-3">
-                    <div className="flex gap-1 p-1">
-                        <span className="font-medium">Score:</span>
-                        <p>{Math.round(match.score * 100)}%</p>
+                <div key={match.id} className="card p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                        <span className="font-medium shrink-0">Score:</span>
+                        <div className="w-full bg-white/10 rounded-full h-2">
+                          <div className="bg-emerald-500 h-2 rounded-full" style={{width: `${Math.round(match.score * 100)}%`}}></div>
+                        </div>
+                        <p className="shrink-0 tabular-nums">{Math.round(match.score * 100)}%</p>
                     </div>
 
-                    <div className="flex flex-col p-1">
+                    <div className="flex flex-col gap-1">
                         <span className="font-medium">Matched Skills:</span>
                         <p>{match.matched_skills.join(', ')}</p>
                     </div>
 
-                    <div className="flex flex-col p-1">
+                    <div className="flex flex-col gap-1">
                         <span className="font-medium">Missing Skills:</span>
                         <p>{match.missing_skills.join(', ')}</p>
                     </div>
-                    </div>
                 </div>
             ))}
-            
+
         </div>
 
-        <div className="flex justify-center mt-3">    
-            <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={() => handleMatches()}>
+        <div className="flex justify-center mt-3">
+            <button className="btn-primary" onClick={() => handleMatches()}>
               <Sparkles size={16} />
               Run Match
               </button>
         </div>
 
         </div>
-       
-    
+
+
     )
 }
 

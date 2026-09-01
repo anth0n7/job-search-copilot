@@ -3,21 +3,25 @@ import type { Company, Application} from './types';
 import { useNavigate } from 'react-router'
 import { useApi } from './useApi'
 import { useError } from './useError'
-import { Trash2, Pencil, Plus, Check, X} from 'lucide-react';
+import { Trash2, Pencil, Plus, Check, X, Briefcase} from 'lucide-react';
+import StatusBadge from './StatusBadge';
+import ConfirmDialog from './ConfirmDialog';
 
 interface ApplicationsProps {
     companies: Company[];
     applications: Application [];
     setApplications:  React.Dispatch<React.SetStateAction<Application[]>>;
+    isLoading: boolean;
 }
 
-function Applications({companies, applications, setApplications}: ApplicationsProps){
+function Applications({companies, applications, setApplications, isLoading}: ApplicationsProps){
     const [role_title, setRoleTitle] = useState('');
     const [job_posting_url, setJobUrl] = useState('');
     const [status, setStatus] = useState('');
     const [application_date, setApplicationDate] = useState('');
     const [company_id, setCompanyId] = useState<number | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
     const navigate = useNavigate();
     const apiFetch = useApi();
     const {setErrorMessage} = useError();
@@ -64,10 +68,6 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
 
 
     function handleDelete(deletedId: number){
-        const confirmed = window.confirm('Deleting this application will also delete all interview stage information tied to it.');
-        if(!confirmed){
-            return;
-        }
         apiFetch(`/applications/${deletedId}`,{
             method: 'DELETE'
         })
@@ -80,6 +80,7 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
         .catch((err) =>{console.error('Failed to fetch application', err)
             setErrorMessage(err.message);
         })
+        .finally(() => setPendingDeleteId(null));
 
     }
 
@@ -103,61 +104,92 @@ function Applications({companies, applications, setApplications}: ApplicationsPr
 
     return(
         <div className="mb-5">
-            <h1 className="flex justify-center font-semibold mb-5">Applications</h1>
-            <ul className="max-w-md mx-auto space-y-2">
-                {applications.map((application) => (
-                <li key={application.id} onClick={() => navigate(`/applications/${application.id}`)} className="flex items-center justify-between bg-gray-800 hover:bg-gray-700 rounded-lg p-4 transition-colors cursor-pointer">{application.role_title}
-                <div className="flex gap-2">
-                    <button className="flex items-center gap-1 px-4 py-2 bg-rose-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-rose-400 cursor-pointer" onClick={(e) => {e.stopPropagation(); handleDelete(application.id);}}>
-                        <Trash2 size={16} />
-                        Delete
-                    </button>
-                    <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400 cursor-pointer" onClick={(e) => {e.stopPropagation(); handleEdit(application);}}>
-                        <Pencil size={16} />
-                        Edit
-                    </button>
+            <h1 className="page-title mb-5">Applications</h1>
+
+            {isLoading && (
+                <div className="max-w-md mx-auto space-y-2">
+                    <div className="skeleton h-14" />
+                    <div className="skeleton h-14" />
+                    <div className="skeleton h-14" />
                 </div>
-                </li> 
-                ))}
-            </ul>
-            
-            <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-gray-800 rounded-lg p-4 mt-4 space-y-4">
-                <label htmlFor="roleTitle" className="block text-sm font-medium text-gray-300 mb-1">Role Title</label>
-                <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="roleTitle" value={role_title} onChange={(e) => setRoleTitle(e.target.value)}/>
+            )}
 
-                <label htmlFor="job_posting_url" className="block text-sm font-medium text-gray-300 mb-1">Job URL</label>
-                <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="job_posting_url" value={job_posting_url} onChange={(e) => setJobUrl(e.target.value)}/>
+            {!isLoading && applications.length === 0 && (
+                <div className="max-w-md mx-auto card p-8 text-center">
+                    <Briefcase size={28} className="mx-auto text-slate-500 mb-3" />
+                    <p className="text-slate-300 font-medium">No applications yet</p>
+                    <p className="muted text-sm mt-1">Add your first application below to start tracking it.</p>
+                </div>
+            )}
 
-                <label htmlFor="status" className="block text-sm font-medium text-gray-300 mb-1">Status</label>
-                <select className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="status" value={status} onChange={(e) => setStatus(e.target.value)}>
-                    <option >saved</option>
-                    <option>applied</option>
-                    <option>interviewing</option>
-                    <option>rejected</option>
-                    <option>offer</option>
+            {!isLoading && applications.length > 0 && (
+                <ul className="max-w-md mx-auto space-y-2">
+                    {applications.map((application) => (
+                    <li key={application.id} onClick={() => navigate(`/applications/${application.id}`)} className="card card-hover flex items-center justify-between p-4 cursor-pointer">
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium">{application.role_title}</span>
+                            <StatusBadge status={application.status} />
+                        </div>
+                    <div className="flex gap-2">
+                        <button className="btn-danger" onClick={(e) => {e.stopPropagation(); setPendingDeleteId(application.id);}}>
+                            <Trash2 size={16} />
+                            Delete
+                        </button>
+                        <button className="btn-primary" onClick={(e) => {e.stopPropagation(); handleEdit(application);}}>
+                            <Pencil size={16} />
+                            Edit
+                        </button>
+                    </div>
+                    </li>
+                    ))}
+                </ul>
+            )}
+
+            <form onSubmit={handleSubmit} className="max-w-md mx-auto card p-4 mt-4 space-y-4">
+                <label htmlFor="roleTitle" className="form-label">Role Title</label>
+                <input className="input-field" id="roleTitle" value={role_title} onChange={(e) => setRoleTitle(e.target.value)}/>
+
+                <label htmlFor="job_posting_url" className="form-label">Job URL</label>
+                <input className="input-field" id="job_posting_url" value={job_posting_url} onChange={(e) => setJobUrl(e.target.value)}/>
+
+                <label htmlFor="status" className="form-label">Status</label>
+                <select className="input-field capitalize" id="status" value={status} onChange={(e) => setStatus(e.target.value)}>
+                    <option className="capitalize">saved</option>
+                    <option className="capitalize">applied</option>
+                    <option className="capitalize">interviewing</option>
+                    <option className="capitalize">rejected</option>
+                    <option className="capitalize">offer</option>
                 </select>
 
-                <label htmlFor="applicationDate" className="block text-sm font-medium text-gray-300 mb-1">Application Date</label>
-                <input className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" id="applicationDate" value={application_date} type="date" onChange={(e) => setApplicationDate(e.target.value)}/>
+                <label htmlFor="applicationDate" className="form-label">Application Date</label>
+                <input className="input-field" id="applicationDate" value={application_date} type="date" onChange={(e) => setApplicationDate(e.target.value)}/>
 
-                 <label htmlFor="company_id" className="block text-sm font-medium text-gray-300 mb-1">Company</label>
-                <select id="company_id" className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-500" value={company_id ?? ''} onChange={(e) => setCompanyId(Number(e.target.value))} required>
+                 <label htmlFor="company_id" className="form-label">Company</label>
+                <select id="company_id" className="input-field" value={company_id ?? ''} onChange={(e) => setCompanyId(Number(e.target.value))} required>
                     <option value="" disabled>Select a company...</option>
                     {companies.map((company) => (
                         <option key={company.id} value={company.id}>{company.name}</option>
                     ))}
                 </select>
                 <div className="flex justify-center gap-2">
-                    <button className="flex items-center gap-1 px-4 py-2 bg-sky-500 text-sm font-medium text-gray-100 rounded-lg hover:bg-sky-400" type="submit">
+                    <button className="btn-primary" type="submit">
                         {editingId === null ? <Plus size={16} /> : <Check size={16} />}
                         {editingId === null ? "Add Application" : "Save Changes"}
                     </button>
-                        {editingId !== null && <button type="button" className="flex items-center gap-1 px-4 py-2 bg-gray-700 text-sm font-medium text-gray-100 rounded-lg hover:bg-gray-600" onClick={() => handleCancel()}>
+                        {editingId !== null && <button type="button" className="btn-secondary" onClick={() => handleCancel()}>
                         <X size={16} />
                         Cancel
                     </button>}
                 </div>
             </form>
+
+            <ConfirmDialog
+                open={pendingDeleteId !== null}
+                title="Delete application?"
+                message="Deleting this application will also delete all interview stage information tied to it."
+                onConfirm={() => pendingDeleteId !== null && handleDelete(pendingDeleteId)}
+                onCancel={() => setPendingDeleteId(null)}
+            />
 
         </div>
     )

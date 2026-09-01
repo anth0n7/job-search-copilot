@@ -4,3 +4,83 @@
 @theme {
     --default-font-family: "Inter", sans-serif;
 }
+
+@layer base {
+    html {
+        color-scheme: dark;
+    }
+    body {
+        @apply bg-slate-950 text-slate-100 antialiased;
+        background-image: radial-gradient(circle at top, rgba(56,189,248,0.07), transparent 55%);
+        background-attachment: fixed;
+    }
+}
+
+@layer components{
+    /* Type */
+    .page-title{
+        @apply text-xl font-semibold text-slate-100 tracking-tight;
+    }
+    .section-title{
+        @apply text-xs font-semibold uppercase tracking-wider text-slate-400;
+    }
+    .muted{
+        @apply text-slate-400;
+    }
+
+    /* Surfaces */
+    .card {
+    @apply bg-slate-900/70 border border-white/10 rounded-2xl shadow-sm shadow-black/20;
+  }
+  .card-hover {
+    @apply hover:bg-slate-800/80 hover:border-white/15 transition-colors duration-150;
+  }
+  .card-elevated {
+    @apply bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/50;
+  }
+  .divider {
+    @apply border-t border-white/10;
+  }
+
+  /* Forms */
+  .form-label {
+    @apply block text-sm font-medium text-slate-300 mb-1;
+  }
+  .input-field {
+    @apply w-full px-3 py-2 bg-slate-950/60 border border-white/10 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/70 focus:border-sky-500/50 transition-colors duration-150;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-sky-500 text-white hover:bg-sky-400 shadow-sm shadow-sky-950/40;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-white/5 text-slate-200 border border-white/10 hover:bg-white/10;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-rose-500/90 text-white hover:bg-rose-500 shadow-sm shadow-rose-950/40;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 px-2.5 py-2 text-sm font-medium rounded-xl transition-colors duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-transparent text-slate-400 hover:text-slate-100 hover:bg-white/5;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply animate-pulse bg-white/5 rounded-xl;
+  }
+}
+
+@keyframes toast-in {
+    from{
+        opacity:0;
+        transform: translate(-50%, -12px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.animate-toast-in {
+    animation: toast-in 0.2s ease-out;
+}
