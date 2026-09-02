@@ -69,9 +69,9 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
                         <p>{new Date(application.application_date).toLocaleDateString()}</p>
                     </div>
 
-                    <div className="flex gap-1">
-                        <span className="font-medium">Job URL:</span>
-                        <a href = {application.job_posting_url ?? undefined} target="_blank" className="text-sky-300 hover:underline transition-colors duration-150">{application.job_posting_url}</a>
+                    <div className="flex-col gap-1">
+                        <span className="font-medium">Job URL: </span>
+                        <a href = {application.job_posting_url ?? undefined} target="_blank" className="text-sky-300 hover:underline transition-colors duration-150 break-all">{application.job_posting_url}</a>
                     </div>
 
                     <div className="mt-6 divider pt-4">
