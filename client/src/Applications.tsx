@@ -14,6 +14,7 @@ interface ApplicationsProps {
     isLoading: boolean;
 }
 
+//pendingDeleteId 
 function Applications({companies, applications, setApplications, isLoading}: ApplicationsProps){
     const [role_title, setRoleTitle] = useState('');
     const [job_posting_url, setJobUrl] = useState('');
@@ -147,7 +148,7 @@ function Applications({companies, applications, setApplications, isLoading}: App
 
             <form onSubmit={handleSubmit} className="max-w-md mx-auto card p-4 mt-4 space-y-4">
                 <label htmlFor="roleTitle" className="form-label">Role Title</label>
-                <input className="input-field" id="roleTitle" value={role_title} onChange={(e) => setRoleTitle(e.target.value)}/>
+                <input className="input-field" id="roleTitle" value={role_title} required onChange={(e) => setRoleTitle(e.target.value)}/>
 
                 <label htmlFor="job_posting_url" className="form-label">Job URL</label>
                 <input className="input-field" id="job_posting_url" value={job_posting_url} onChange={(e) => setJobUrl(e.target.value)}/>

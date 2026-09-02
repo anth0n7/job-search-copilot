@@ -142,7 +142,7 @@ function InterviewStages({applicationID} : InterviewStagesProps){
 
                         <div className="flex gap-1 p-0.5">
                             <span className="font-medium">Scheduled Date:</span>
-                            <p>{new Date(interview_stage.scheduled_date).toLocaleString()}</p>
+                            <p>{interview_stage.scheduled_date ? new Date(interview_stage.scheduled_date).toLocaleString() : 'Not Scheduled'}</p>
                         </div>
 
                         <div className="flex gap-1 p-0.5">

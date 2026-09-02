@@ -50,7 +50,7 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
                        <div className="mt-6 divider pt-4">
                             <div className="flex gap-1">
                                 <span className="font-medium">Company Website:</span>
-                                <a href={company.website} className="text-sky-300 hover:underline">{company.website}</a>
+                                <a href={company.website ?? undefined} className="text-sky-300 hover:underline">{company.website}</a>
                             </div>
 
                             <div className="mt-6 divider pt-4">
@@ -71,7 +71,7 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
 
                     <div className="flex gap-1">
                         <span className="font-medium">Job URL:</span>
-                        <a href = {application.job_posting_url} target="_blank" className="text-sky-300 hover:underline transition-colors duration-150">{application.job_posting_url}</a>
+                        <a href = {application.job_posting_url ?? undefined} target="_blank" className="text-sky-300 hover:underline transition-colors duration-150">{application.job_posting_url}</a>
                     </div>
 
                     <div className="mt-6 divider pt-4">

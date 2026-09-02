@@ -22,6 +22,8 @@ function ApplicationContacts({companyID} : ApplicationContactsProp){
         .finally(() => setIsLoading(false));
     }, [companyID]);
 
+
+    //isLoading helps distinguish between "something is happening, wait", "No applications yet", and "showing the actual data"
     return(
         <div>
             <h1 className="section-title mb-2">Contacts</h1>
@@ -56,7 +58,7 @@ function ApplicationContacts({companyID} : ApplicationContactsProp){
 
                         <div className="flex gap-1">
                             <span className="font-medium">LinkedIn:</span>
-                            <a href={contact.linkedin_url} target="_blank" className="text-sky-300 hover:underline transition-colors duration-150">{contact.linkedin_url}</a>
+                            <a href={contact.linkedin_url ?? undefined} target="_blank" className="text-sky-300 hover:underline transition-colors duration-150">{contact.linkedin_url}</a>
                         </div>
 
                         <div className="flex gap-1">
