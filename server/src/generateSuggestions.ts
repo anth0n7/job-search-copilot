@@ -8,7 +8,7 @@ const anthropic = new Anthropic({
 export async function generateSuggestions(resumeText: string, jobPostingRawText: string, missingSkills: string[]){
     const message = await anthropic.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [
             {
                  role: 'user',

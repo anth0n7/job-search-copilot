@@ -7,6 +7,14 @@ I built this as a learning project to practice full-stack development from the g
 # Live Demo
 **Live demo:** [Job Search Copilot](https://job-search-copilot-eta.vercel.app/applications)
 
+![Applications list](./screenshots/Applications.png)
+![Application View](./screenshots/ApplicationView.png)
+![Cover Letter Draft](./screenshots/CoverLetter.png)
+![Resume Match](./screenshots/Matches.png)
+![Suggestions](./screenshots/Suggestions.png)
+
+
+
 ## What it does
 
 ### Core tracking
