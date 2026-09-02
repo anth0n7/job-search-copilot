@@ -4,6 +4,9 @@ A full-stack app to track job applications, with some AI features to help figure
 
 I built this as a learning project to practice full-stack development from the ground up: designing a database schema, building a REST API, adding real authentication, and eventually working with two different AI APIs.
 
+# Live Demo
+**Live demo:** [Job Search Copilot](job-search-copilot-eta.vercel.app)
+
 ## What it does
 
 ### Core tracking
