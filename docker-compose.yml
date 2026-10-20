@@ -1,0 +1,94 @@
+# =============================================================================
+# docker compose = declare several containers that should run together.
+#
+# Concepts this file teaches:
+#   services  → each named block is a container recipe
+#   networks  → containers on the same Compose network can reach each other
+#               by SERVICE NAME (e.g. the API talks to host "db", not localhost)
+#   volumes   → named volumes persist data after a container is deleted
+#   ports     → "HOST:CONTAINER" maps a port on your machine into the container
+#   depends_on→ start order (with healthcheck = wait until DB is actually ready)
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — we use the official image (no custom Dockerfile needed).
+  # Lesson: not every service needs its own Dockerfile; reuse public images.
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: jsc-db
+    environment:
+      # These names are what the official postgres image expects.
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-jobtracker}
+    ports:
+      # Optional: reach Postgres from your host (psql, GUI tools) at localhost:5432.
+      # The API container does NOT need this — it uses the internal network.
+      - "5432:5432"
+    volumes:
+      # Named volume: DB files survive `docker compose down` (not `down -v`).
+      - pgdata:/var/lib/postgresql/data
+      # First boot only: scripts in this folder run automatically.
+      - ./server/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-jobtracker}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # Express API
+  # ---------------------------------------------------------------------------
+  server:
+    build:
+      context: ./server
+      # context = folder sent to Docker as the build context (see .dockerignore).
+    container_name: jsc-server
+    env_file:
+      - .env
+    environment:
+      # Inside Compose, "db" resolves to the db service's IP on the shared network.
+      # This is the #1 "aha" moment versus running on your laptop with localhost.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-jobtracker}
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      # Bind mount: edit server code on your machine → changes appear in the container.
+      # Combined with `npm run dev` (tsx watch) you get hot reload while learning.
+      - ./server:/app
+      # Anonymous volume: keep container node_modules instead of overwriting them
+      # with an empty/host folder from the bind mount above.
+      - /app/node_modules
+    command: npm run dev
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Vite / React frontend (development stage of client/Dockerfile)
+  # ---------------------------------------------------------------------------
+  client:
+    build:
+      context: ./client
+      target: development
+    container_name: jsc-client
+    env_file:
+      - .env
+    environment:
+      # The BROWSER runs on your machine, so it must call localhost:3001
+      # (the published port), not the Docker DNS name "server".
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+      VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-${CLERK_PUBLISHABLE_KEY:-}}
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    depends_on:
+      - server
+
+volumes:
+  pgdata:

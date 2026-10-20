@@ -30,7 +30,10 @@ app.use('/resumes', resumesRouter);
 
 
 
-const PORT = 3001;
-app.listen(PORT, () => {
+// Prefer PORT from the environment so Docker (and hosts) can choose the port.
+// Bind to 0.0.0.0 so the process accepts connections from outside the container
+// (localhost alone only accepts traffic from inside the same container).
+const PORT = Number(process.env.PORT) || 3001;
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
