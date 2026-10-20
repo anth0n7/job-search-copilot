@@ -51,6 +51,32 @@ A few things I did on purpose that might look like they need explaining:
 
 ## Running it locally
 
+### Option A — Docker (recommended for learning Docker)
+
+If you want Postgres + API + frontend with one command, use Compose. There is a step-by-step learning guide in **[DOCKER.md](./DOCKER.md)** (images vs containers, networking, volumes, multi-stage builds).
+
+```bash
+git clone <your-repo-url>
+cd job-search-copilot
+
+cp .env.example .env
+# fill in Clerk / Anthropic / Voyage keys in .env
+
+docker compose up --build
+```
+
+Then open `http://localhost:5173`.
+
+| Service | URL / port |
+|---------|------------|
+| Frontend (Vite) | http://localhost:5173 |
+| API (Express) | http://localhost:3001 |
+| Postgres | localhost:5432 |
+
+Stop with `docker compose down`. Add `-v` only if you also want to wipe the database volume.
+
+### Option B — Node on your machine
+
 ### You'll need
 - Node.js 18+
 - PostgreSQL
@@ -88,7 +114,7 @@ Then open `http://localhost:5173`.
 
 ## What I'd add next
 
-- Deploying it properly with Docker and AWS
+- Deploying the Docker images to AWS (ECS/Fargate or similar)
 - Automated tests
 - CI/CD with GitHub Actions
 - Caching AI responses with Redis so I'm not re-calling the API for the same thing twice

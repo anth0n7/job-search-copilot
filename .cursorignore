@@ -1,0 +1,30 @@
+# Keep secrets and local credentials out of Cursor indexing / context.
+# (This does not replace .gitignore — still never commit real keys.)
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Common key / credential filenames
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+**/credentials.json
+**/service-account*.json
+**/secrets/**
+**/*secret*
+**/*secrets*
+
+# Local tool / OS junk (optional noise reduction)
+.DS_Store
+**/.DS_Store

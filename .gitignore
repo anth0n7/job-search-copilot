@@ -1,4 +1,11 @@
 node_modules
 .env
+.env.*
+!.env.example
 dist
 .DS_Store
+*.pem
+*.key
+*.p12
+*.pfx
+
