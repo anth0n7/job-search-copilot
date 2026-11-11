@@ -146,7 +146,8 @@ router.put('/:id/job_postings', requireAuth, async (req, res) =>{
         if(auth.rows.length === 0){
             return res.status(404).json({error: 'Application not found'});
         }
-        const result = await pool.query('INSERT INTO job_postings (application_id, raw_text) VALUES ($1, $2) ON CONFLICT (application_id) DO UPDATE SET raw_text = $2 RETURNING *',
+        //parsed_data is derived from raw_text, so clear it when the text changes (IS DISTINCT FROM is a null-safe !=)
+        const result = await pool.query('INSERT INTO job_postings (application_id, raw_text) VALUES ($1, $2) ON CONFLICT (application_id) DO UPDATE SET raw_text = EXCLUDED.raw_text, parsed_data = CASE WHEN job_postings.raw_text IS DISTINCT FROM EXCLUDED.raw_text THEN NULL ELSE job_postings.parsed_data END RETURNING *',
             [applicationID, raw_text]
         )
         res.json(result.rows[0]);
@@ -244,19 +245,18 @@ router.post('/:id/matches', requireAuth, async (req, res) =>{
 
         const jobPostingRawText = job_posting.rows[0].raw_text;
         const jobPostingParsedData = job_posting.rows[0].parsed_data;
+        //skills are compared against parsed_data, which is cleared whenever the posting text changes
+        if(!jobPostingParsedData){
+            return res.status(400).json({error:'Parse the job posting before running a match'});
+        }
         const resumeTextSnapshot = resumeQuery.rows[0].resume_text;
         const resumeEmbedding = await getEmbedding(resumeTextSnapshot)
         const rawTextEmbedding = await getEmbedding(jobPostingRawText);
         const similarityScore = cosineSimilarity(resumeEmbedding, rawTextEmbedding);
 
-        let matchedSkills: string[] = [];
-        let missingSkills: string[] = [];
-
-        if(jobPostingParsedData){
-          const comparedSkills = await compareSkills(resumeTextSnapshot, jobPostingParsedData.required_skills)
-          matchedSkills = comparedSkills.matched_skills;
-          missingSkills = comparedSkills.missing_skills;
-        }
+        const comparedSkills = await compareSkills(resumeTextSnapshot, jobPostingParsedData.required_skills)
+        const matchedSkills: string[] = comparedSkills.matched_skills;
+        const missingSkills: string[] = comparedSkills.missing_skills;
 
         const result = await pool.query('INSERT INTO matches (score, matched_skills, missing_skills, application_id, resume_text_snapshot) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [similarityScore, matchedSkills, missingSkills, applicationID, resumeTextSnapshot]

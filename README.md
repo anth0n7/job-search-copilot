@@ -65,7 +65,8 @@ cd job-search-copilot
 # Backend
 cd server
 npm install
-# create a .env file in server/ with:
+# create ~/.config/job-search-copilot/server.env (kept outside the repo so keys never sit in the
+# project folder; set ENV_FILE=/some/other/path to use a different file) with:
 #   DATABASE_URL=postgresql://localhost:5432/jobtracker
 #   CLERK_SECRET_KEY=...
 #   CLERK_PUBLISHABLE_KEY=...

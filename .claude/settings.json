@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./server/.env)",
+      "Read(./client/.env)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(~/.config/job-search-copilot/**)",
+      "Bash(cat *.env*)",
+      "Bash(less *.env*)",
+      "Bash(more *.env*)",
+      "Bash(head *.env*)",
+      "Bash(tail *.env*)",
+      "Bash(grep * *.env*)",
+      "Bash(source *.env*)",
+      "Bash(cp *.env* *)",
+      "Bash(cat *job-search-copilot*)",
+      "Bash(less *job-search-copilot*)",
+      "Bash(more *job-search-copilot*)",
+      "Bash(head *job-search-copilot*)",
+      "Bash(tail *job-search-copilot*)",
+      "Bash(grep * *job-search-copilot*)",
+      "Bash(source *job-search-copilot*)",
+      "Bash(cp *job-search-copilot* *)"
+    ]
+  }
+}
