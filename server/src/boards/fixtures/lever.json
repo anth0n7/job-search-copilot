@@ -1,0 +1,129 @@
+[
+  {
+    "additional": "<div class=\"content-intro\"><p>We are hiring a <strong>Customer Success Manager</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "additionalPlain": "We are hiring a Customer Success Manager.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "categories": {
+      "commitment": "Regular Full Time (Salary)",
+      "department": "Customer Success",
+      "location": "Atlanta, Georgia",
+      "team": "Customer Success Team",
+      "allLocations": [
+        "Atlanta, Georgia"
+      ]
+    },
+    "createdAt": 1788199939703,
+    "descriptionPlain": "We are hiring a Customer Success Manager.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "description": "<div class=\"content-intro\"><p>We are hiring a <strong>Customer Success Manager</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "id": "ad208490-4052-4f91-a57e-433f2d1e484b",
+    "lists": [
+      {
+        "text": "Skill Set:",
+        "content": "<li>Invented list item</li>"
+      },
+      {
+        "text": "Within 1 Month You'll:",
+        "content": "<li>Invented list item</li>"
+      },
+      {
+        "text": "Within 3 Months",
+        "content": "<li>Invented list item</li>"
+      },
+      {
+        "text": "Within 6 Months:",
+        "content": "<li>Invented list item</li>"
+      }
+    ],
+    "salaryRange": {
+      "min": 85000,
+      "max": 175000,
+      "currency": "USD",
+      "interval": "per-year-salary"
+    },
+    "text": "Customer Success Manager",
+    "country": "US",
+    "workplaceType": "hybrid",
+    "opening": "<div class=\"content-intro\"><p>We are hiring a <strong>Customer Success Manager</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "openingPlain": "We are hiring a Customer Success Manager.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "descriptionBody": "<div class=\"content-intro\"><p>We are hiring a <strong>Customer Success Manager</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "descriptionBodyPlain": "We are hiring a Customer Success Manager.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "hostedUrl": "https://jobs.lever.co/leverdemo/ad208490-4052-4f91-a57e-433f2d1e484b",
+    "applyUrl": "https://jobs.lever.co/leverdemo/ad208490-4052-4f91-a57e-433f2d1e484b/apply"
+  },
+  {
+    "additional": "<div class=\"content-intro\"><p>We are hiring a <strong>Dentist</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "additionalPlain": "We are hiring a Dentist.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "categories": {
+      "commitment": "Regular Full Time (Salary)",
+      "department": "People (HR)",
+      "location": "Houston, TX",
+      "team": "People",
+      "allLocations": [
+        "Houston, TX"
+      ]
+    },
+    "createdAt": 1787600587936,
+    "description": "<div class=\"content-intro\"><p>We are hiring a <strong>Dentist</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "descriptionPlain": "We are hiring a Dentist.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "id": "120b5976-ee4e-4dc5-b31b-2b1ca124460c",
+    "lists": [
+      {
+        "text": "Key Responsibilities",
+        "content": "<li>Invented list item</li>"
+      },
+      {
+        "text": "Qualifications",
+        "content": "<li>Invented list item</li>"
+      },
+      {
+        "text": "Preferred Qualifications",
+        "content": "<li>Invented list item</li>"
+      },
+      {
+        "text": "What We Offer",
+        "content": "<li>Invented list item</li>"
+      }
+    ],
+    "salaryRange": {
+      "min": 150000,
+      "max": 185000,
+      "currency": "USD",
+      "interval": "per-year-salary"
+    },
+    "text": "Dentist",
+    "country": "US",
+    "workplaceType": "onsite",
+    "opening": "<div class=\"content-intro\"><p>We are hiring a <strong>Dentist</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "openingPlain": "We are hiring a Dentist.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "descriptionBody": "<div class=\"content-intro\"><p>We are hiring a <strong>Dentist</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "descriptionBodyPlain": "We are hiring a Dentist.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "hostedUrl": "https://jobs.lever.co/leverdemo/120b5976-ee4e-4dc5-b31b-2b1ca124460c",
+    "applyUrl": "https://jobs.lever.co/leverdemo/120b5976-ee4e-4dc5-b31b-2b1ca124460c/apply"
+  },
+  {
+    "additional": "<div class=\"content-intro\"><p>We are hiring a <strong>Director of Diversity, Equity, and Inclusion</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "additionalPlain": "We are hiring a Director of Diversity, Equity, and Inclusion.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "categories": {
+      "commitment": "Regular Full Time (Salary)",
+      "department": "Executive",
+      "location": "London, UK",
+      "team": "Executive",
+      "allLocations": [
+        "London, UK"
+      ]
+    },
+    "createdAt": 1718633877107,
+    "description": "<div class=\"content-intro\"><p>We are hiring a <strong>Director of Diversity, Equity, and Inclusion</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "descriptionPlain": "We are hiring a Director of Diversity, Equity, and Inclusion.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "id": "1dbf02a6-d434-4e47-8d66-3aba2c17bed1",
+    "lists": [],
+    "text": "Director of Diversity, Equity, and Inclusion",
+    "country": "GB",
+    "workplaceType": "onsite",
+    "opening": "<div class=\"content-intro\"><p>We are hiring a <strong>Director of Diversity, Equity, and Inclusion</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "openingPlain": "We are hiring a Director of Diversity, Equity, and Inclusion.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "descriptionBody": "<div class=\"content-intro\"><p>We are hiring a <strong>Director of Diversity, Equity, and Inclusion</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+    "descriptionBodyPlain": "We are hiring a Director of Diversity, Equity, and Inclusion.\n\nRequirements\n- 3+ years of experience\n- Python & SQL",
+    "hostedUrl": "https://jobs.lever.co/leverdemo/1dbf02a6-d434-4e47-8d66-3aba2c17bed1",
+    "applyUrl": "https://jobs.lever.co/leverdemo/1dbf02a6-d434-4e47-8d66-3aba2c17bed1/apply"
+  }
+]

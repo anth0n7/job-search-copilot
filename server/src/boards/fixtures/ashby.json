@@ -1,0 +1,491 @@
+{
+  "jobs": [
+    {
+      "id": "7458d4e9-da2e-47bd-98cb-adfda43d42b2",
+      "title": "Engineering Manager - EU",
+      "department": "Engineering",
+      "team": "EMEA Engineering",
+      "employmentType": "FullTime",
+      "location": "Remote - European Union",
+      "secondaryLocations": [
+        {
+          "location": "Spain",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Spain",
+              "addressCountry": "Spain",
+              "addressLocality": "Spain"
+            }
+          }
+        },
+        {
+          "location": "Italy",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Italy",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Germany",
+          "address": {
+            "postalAddress": {
+              "addressCountry": "Germany",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Switzerland",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Switzerland",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Denmark",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Denmark",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Norway",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Norway",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Croatia",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Croatia",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Ireland",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Ireland",
+              "addressCountry": "Ireland",
+              "addressLocality": "Ireland"
+            }
+          }
+        },
+        {
+          "location": "Stockholm",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Stockholm",
+              "addressCountry": "Sweden",
+              "addressLocality": "Stockholm"
+            }
+          }
+        },
+        {
+          "location": "Romania",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Romania",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Austria",
+          "address": {
+            "postalAddress": {
+              "addressCountry": "Austria"
+            }
+          }
+        },
+        {
+          "location": "Barcelona",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Catalonia",
+              "addressCountry": "Spain",
+              "addressLocality": "Barcelona"
+            }
+          }
+        },
+        {
+          "location": "Netherlands",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Netherlands",
+              "addressLocality": "Amsterdam"
+            }
+          }
+        },
+        {
+          "location": "Portugal",
+          "address": {
+            "postalAddress": {
+              "addressCountry": "Portugal"
+            }
+          }
+        },
+        {
+          "location": "France",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "France",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Berlin",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Germany",
+              "addressLocality": "Berlin"
+            }
+          }
+        },
+        {
+          "location": "Sweden",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Sweden",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Hungary",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Hungary",
+              "addressCountry": "Hungary",
+              "addressLocality": "Budapest"
+            }
+          }
+        },
+        {
+          "location": "Estonia",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Estonia",
+              "addressLocality": ""
+            }
+          }
+        }
+      ],
+      "publishedAt": "2024-03-04T14:29:08.532+00:00",
+      "isListed": true,
+      "isRemote": true,
+      "workplaceType": "Remote",
+      "address": {
+        "postalAddress": {
+          "postalCode": "",
+          "addressRegion": "",
+          "addressCountry": "European Union",
+          "addressLocality": ""
+        }
+      },
+      "jobUrl": "https://jobs.ashbyhq.com/Ashby/7458d4e9-da2e-47bd-98cb-adfda43d42b2",
+      "applyUrl": "https://jobs.ashbyhq.com/Ashby/7458d4e9-da2e-47bd-98cb-adfda43d42b2/application",
+      "descriptionHtml": "<div class=\"content-intro\"><p>We are hiring a <strong>Engineering Manager - EU</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+      "descriptionPlain": "We are hiring a Engineering Manager - EU.\n\nRequirements\n- 3+ years of experience\n- Python & SQL"
+    },
+    {
+      "id": "86a60834-ba64-484d-9658-afa1bc97a957",
+      "title": "Mid Market Account Executive - EMEA (French Speaking)",
+      "department": "Sales",
+      "team": "Sales",
+      "employmentType": "FullTime",
+      "location": "France",
+      "secondaryLocations": [
+        {
+          "location": "United Kingdom",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "United Kingdom",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Belgium",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Belgium",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Germany",
+          "address": {
+            "postalAddress": {
+              "addressCountry": "Germany",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Switzerland",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Switzerland",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Ireland",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Ireland",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Austria",
+          "address": {
+            "postalAddress": {
+              "addressCountry": "Austria"
+            }
+          }
+        },
+        {
+          "location": "Spain",
+          "address": {
+            "postalAddress": {
+              "addressCountry": "Spain"
+            }
+          }
+        },
+        {
+          "location": "Stuttgart",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Baden-Wurttemberg",
+              "addressCountry": "Germany",
+              "addressLocality": "Stuttgart"
+            }
+          }
+        },
+        {
+          "location": "Berlin",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Germany",
+              "addressLocality": "Berlin"
+            }
+          }
+        }
+      ],
+      "publishedAt": "2026-09-08T16:27:26.694+00:00",
+      "isListed": true,
+      "isRemote": true,
+      "workplaceType": "Remote",
+      "address": {
+        "postalAddress": {
+          "addressRegion": "",
+          "addressCountry": "France",
+          "addressLocality": ""
+        }
+      },
+      "jobUrl": "https://jobs.ashbyhq.com/Ashby/86a60834-ba64-484d-9658-afa1bc97a957",
+      "applyUrl": "https://jobs.ashbyhq.com/Ashby/86a60834-ba64-484d-9658-afa1bc97a957/application",
+      "descriptionHtml": "<div class=\"content-intro\"><p>We are hiring a <strong>Mid Market Account Executive - EMEA (French Speaking)</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+      "descriptionPlain": "We are hiring a Mid Market Account Executive - EMEA (French Speaking).\n\nRequirements\n- 3+ years of experience\n- Python & SQL"
+    },
+    {
+      "id": "f40ef345-82a8-4956-9150-193b4fdf8183",
+      "title": "Senior Product Designer",
+      "department": "Design",
+      "team": "Design",
+      "employmentType": "FullTime",
+      "location": "Remote - US",
+      "secondaryLocations": [
+        {
+          "location": "Austin",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Texas",
+              "addressCountry": "USA",
+              "addressLocality": "Austin"
+            }
+          }
+        },
+        {
+          "location": "Los Angeles",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "California",
+              "addressCountry": "USA",
+              "addressLocality": "Los Angeles"
+            }
+          }
+        },
+        {
+          "location": "Portland",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Oregon",
+              "addressCountry": "USA",
+              "addressLocality": "Portland"
+            }
+          }
+        },
+        {
+          "location": "Salt Lake City",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Utah",
+              "addressCountry": "USA",
+              "addressLocality": "Salt Lake City"
+            }
+          }
+        },
+        {
+          "location": "Waterloo",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Ontario",
+              "addressCountry": "Canada",
+              "addressLocality": "Waterloo"
+            }
+          }
+        },
+        {
+          "location": "Boston",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Massachusetts",
+              "addressCountry": "USA",
+              "addressLocality": "Boston"
+            }
+          }
+        },
+        {
+          "location": "Remote - Canada",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "",
+              "addressCountry": "Canada",
+              "addressLocality": ""
+            }
+          }
+        },
+        {
+          "location": "Seattle",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Washington",
+              "addressCountry": "USA",
+              "addressLocality": "Seattle"
+            }
+          }
+        },
+        {
+          "location": "New York",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "New York",
+              "addressCountry": "USA",
+              "addressLocality": "New York"
+            }
+          }
+        },
+        {
+          "location": "San Francisco",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "CA",
+              "addressCountry": "USA",
+              "addressLocality": "San Francisco"
+            }
+          }
+        },
+        {
+          "location": "Vancouver",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "British Columbia",
+              "addressCountry": "Canada",
+              "addressLocality": "Vancouver"
+            }
+          }
+        },
+        {
+          "location": "Denver",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Colorado",
+              "addressCountry": "USA",
+              "addressLocality": "Denver"
+            }
+          }
+        },
+        {
+          "location": "Toronto",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Ontario",
+              "addressCountry": "Canada",
+              "addressLocality": "Toronto"
+            }
+          }
+        },
+        {
+          "location": "Chicago",
+          "address": {
+            "postalAddress": {
+              "addressRegion": "Illinois",
+              "addressCountry": "USA",
+              "addressLocality": "Chicago"
+            }
+          }
+        }
+      ],
+      "publishedAt": "2025-12-05T22:43:22.147+00:00",
+      "isListed": true,
+      "isRemote": true,
+      "workplaceType": "Remote",
+      "address": {
+        "postalAddress": {
+          "addressRegion": "",
+          "addressCountry": "United States",
+          "addressLocality": ""
+        }
+      },
+      "jobUrl": "https://jobs.ashbyhq.com/Ashby/f40ef345-82a8-4956-9150-193b4fdf8183",
+      "applyUrl": "https://jobs.ashbyhq.com/Ashby/f40ef345-82a8-4956-9150-193b4fdf8183/application",
+      "descriptionHtml": "<div class=\"content-intro\"><p>We are hiring a <strong>Senior Product Designer</strong>.</p><h3>Requirements</h3><ul><li>3+ years of experience</li><li>Python &amp; SQL</li></ul><p>Salary &amp; benefits: see below.</p></div>",
+      "descriptionPlain": "We are hiring a Senior Product Designer.\n\nRequirements\n- 3+ years of experience\n- Python & SQL"
+    }
+  ],
+  "apiVersion": "1"
+}
