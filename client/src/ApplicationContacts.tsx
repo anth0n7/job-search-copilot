@@ -20,7 +20,7 @@ function ApplicationContacts({companyID} : ApplicationContactsProp){
             setErrorMessage(err.message);
         })
         .finally(() => setIsLoading(false));
-    }, [companyID]);
+    }, [companyID, apiFetch, setErrorMessage]);
 
 
     //isLoading helps distinguish between "something is happening, wait", "No applications yet", and "showing the actual data"

@@ -35,7 +35,7 @@ function InterviewStages({applicationID} : InterviewStagesProps){
             setErrorMessage(err.message);
         })
         .finally(() => setIsLoading(false));
-    } , [applicationID]);
+    } , [applicationID, apiFetch, setErrorMessage]);
 
     function handleDelete(deletedId: number){
         apiFetch(`/interview_stages/${deletedId}`,{

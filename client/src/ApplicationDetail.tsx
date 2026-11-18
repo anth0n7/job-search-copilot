@@ -33,7 +33,7 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
         .catch((err) => {console.error('Failed to fetch application: ', err);
             setErrorMessage(err.message);
         });
-    }, [id]);
+    }, [id, apiFetch, setErrorMessage]);
 
     //we need the condition because JSX runs before the data exists and the initial value is null
     return(

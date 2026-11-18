@@ -24,7 +24,7 @@ function Matches({applicationID} : MatchesProps){
       .catch((err) => {console.error("Failed to fetch matches:", err)
         setErrorMessage(err.message);
       })
-    }, [applicationID]);
+    }, [applicationID, apiFetch, setErrorMessage]);
 
     function handleMatches(){
         apiFetch(`/applications/${applicationID}/matches`, {

@@ -31,7 +31,7 @@ function CompanyContacts({companyID}: ContactsProps){
             setErrorMessage(err.message);
         })
         .finally(() => setIsLoading(false));
-    }, [companyID]);
+    }, [companyID, apiFetch, setErrorMessage]);
 
     function resetForm(){
         setEmail('');

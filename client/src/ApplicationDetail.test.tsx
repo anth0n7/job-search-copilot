@@ -4,7 +4,11 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 
 const apiFetch = vi.fn();
 vi.mock('./useApi', () => ({ useApi: () => apiFetch }));
-vi.mock('./useError', () => ({ useError: () => ({ setErrorMessage: vi.fn() }) }));
+// the same object every render, like the real context's stable setter (a new one each render would re-run effects)
+vi.mock('./useError', () => {
+  const value = { setErrorMessage: vi.fn() };
+  return { useError: () => value };
+});
 // the sections fetch their own data; they are not what is being tested here
 vi.mock('./InterviewStages', () => ({ default: () => null }));
 vi.mock('./ApplicationContacts', () => ({ default: () => null }));

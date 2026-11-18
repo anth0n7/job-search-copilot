@@ -22,7 +22,7 @@ function Suggestions({applicationID}: SuggestionProps){
         .catch((err) => {console.error("Failed to fetch suggestion:", err)
             setErrorMessage(err.message);
         })
-    }, [applicationID]);
+    }, [applicationID, apiFetch, setErrorMessage]);
 
     function handleSuggestions(){
         setIsGenerating(true);

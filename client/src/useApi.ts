@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useAuth } from '@clerk/react'
 import { API_URL } from './config'
 
@@ -19,7 +20,9 @@ async function errorMessageFor(response: Response): Promise<string> {
 export function useApi(){
     const { getToken } = useAuth();
 
-    async function apiFetch(path: string, options: RequestInit = {}){
+    //useCallback keeps the same function between renders (it only changes if getToken does).
+    //That lets components list apiFetch in a useEffect dependency array without re-running the effect on every render.
+    const apiFetch = useCallback(async (path: string, options: RequestInit = {}) => {
         const token = await getToken();
         let response: Response;
         try {
@@ -38,7 +41,7 @@ export function useApi(){
             throw new Error(await errorMessageFor(response));
         }
         return response.json();
-    }
+    }, [getToken]);
 
     return apiFetch;
 }

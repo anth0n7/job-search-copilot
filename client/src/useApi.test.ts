@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 
 // Fake Clerk: pretend a user is signed in and hand out a fixed token
-vi.mock('@clerk/react', () => ({
-  useAuth: () => ({ getToken: async () => 'fake-token' }),
-}));
+// Like the real Clerk, this hands back the same getToken function on every render
+vi.mock('@clerk/react', () => {
+  const auth = { getToken: async () => 'fake-token' };
+  return { useAuth: () => auth };
+});
 
 import { useApi } from './useApi';
 
@@ -19,6 +21,15 @@ const callApi = () => renderHook(() => useApi()).result.current('/applications')
 
 beforeEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe('useApi identity', () => {
+  it('returns the same function on every render, so effects can list it as a dependency', () => {
+    const { result, rerender } = renderHook(() => useApi());
+    const first = result.current;
+    rerender();
+    expect(result.current).toBe(first);
+  });
 });
 
 describe('useApi error handling', () => {

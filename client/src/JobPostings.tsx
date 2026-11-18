@@ -26,7 +26,7 @@ function JobPostings({applicationID} : JobPostingProps){
       .catch((err) => {console.error("Failed to fetch job posting:", err)
         setErrorMessage(err.message);
       })
-    }, [applicationID]);
+    }, [applicationID, apiFetch, setErrorMessage]);
 
     function handleSave(){
         apiFetch(`/applications/${applicationID}/job_postings`, {

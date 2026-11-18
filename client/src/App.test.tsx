@@ -10,7 +10,11 @@ vi.mock('@clerk/react', () => ({
 }));
 const apiFetch = vi.fn();
 vi.mock('./useApi', () => ({ useApi: () => apiFetch }));
-vi.mock('./useError', () => ({ useError: () => ({ setErrorMessage: vi.fn() }) }));
+// the same object every render, like the real context's stable setter (a new one each render would re-run effects)
+vi.mock('./useError', () => {
+  const value = { setErrorMessage: vi.fn() };
+  return { useError: () => value };
+});
 vi.mock('./ErrorBanner', () => ({ default: () => null }));
 vi.mock('./Companies', () => ({ default: (p: { companies: unknown[] }) => <p>companies:{p.companies.length}</p> }));
 vi.mock('./Applications', () => ({ default: () => null }));

@@ -24,7 +24,7 @@ function Resumes(){
             setErrorMessage(err.message);
         })
         .finally(() => setIsLoading(false));
-    }, [])
+    }, [apiFetch, setErrorMessage])
 
     function handleSave(){
         apiFetch('/resumes', {
