@@ -1,6 +1,5 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware'
-import { getAuth } from '@clerk/express'
+import { requireAuth, currentUserId } from '../middleware'
 import { sendServerError, isBlank, errorCode } from '../errors'
 import { parseId, isId } from '../parseId'
 import {
@@ -32,19 +31,19 @@ function readStageInput(body: Record<string, unknown>): InterviewStageInput | st
 }
 
 router.get('/', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
-    res.json(await listInterviewStages(userId!));
+    res.json(await listInterviewStages(userId));
   } catch (err) {
     sendServerError(res, err);
   }
 });
 
 router.get('/:id', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const id = parseId(req.params.id);
-    const stage = id === null ? null : await getInterviewStage(userId!, id);
+    const stage = id === null ? null : await getInterviewStage(userId, id);
     if (!stage) {
       return res.status(404).json({ error: 'Interview stage not found' });
     }
@@ -55,13 +54,13 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 router.post('/', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const input = readStageInput(req.body);
     if (typeof input === 'string') {
       return res.status(400).json({ error: input });
     }
-    const stage = await createInterviewStage(userId!, input);
+    const stage = await createInterviewStage(userId, input);
     if (!stage) {
       return res.status(404).json({ error: 'Application not found' });
     }
@@ -75,14 +74,14 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 router.put('/:id', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const input = readStageInput(req.body);
     if (typeof input === 'string') {
       return res.status(400).json({ error: input });
     }
     const id = parseId(req.params.id);
-    const stage = id === null ? null : await updateInterviewStage(userId!, id, input);
+    const stage = id === null ? null : await updateInterviewStage(userId, id, input);
     if (!stage) {
       return res.status(404).json({ error: 'Interview stage or application not found' });
     }
@@ -93,10 +92,10 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 router.delete('/:id', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const id = parseId(req.params.id);
-    const stage = id === null ? null : await deleteInterviewStage(userId!, id);
+    const stage = id === null ? null : await deleteInterviewStage(userId, id);
     if (!stage) {
       return res.status(404).json({ error: 'Interview stage not found' });
     }

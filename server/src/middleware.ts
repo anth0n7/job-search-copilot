@@ -9,3 +9,14 @@ export function requireAuth(req: Request, res: Response, next: NextFunction){
   next();
 }
 
+
+//The signed-in user's id, for use inside a route that already has requireAuth.
+//TypeScript only knows the id might be null, so this replaces a blind `userId!`: if a route is ever written
+//without requireAuth, it fails loudly here (a 500) instead of carrying on with no user.
+export function currentUserId(req: Request): string {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    throw new Error('No signed-in user: is requireAuth missing on this route?');
+  }
+  return userId;
+}

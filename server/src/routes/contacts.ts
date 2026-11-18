@@ -1,6 +1,5 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware'
-import { getAuth } from '@clerk/express'
+import { requireAuth, currentUserId } from '../middleware'
 import { sendServerError, isBlank, errorCode } from '../errors'
 import { parseId, isId } from '../parseId'
 import { createContact, deleteContact, getContact, listContacts, updateContact } from '../repositories/contacts'
@@ -24,19 +23,19 @@ function readContactInput(body: Record<string, unknown>): ContactInput | string 
 }
 
 router.get('/', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
-    res.json(await listContacts(userId!));
+    res.json(await listContacts(userId));
   } catch (err) {
     sendServerError(res, err);
   }
 });
 
 router.get('/:id', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const id = parseId(req.params.id);
-    const contact = id === null ? null : await getContact(userId!, id);
+    const contact = id === null ? null : await getContact(userId, id);
     if (!contact) {
       return res.status(404).json({ error: 'Contact not found' });
     }
@@ -47,13 +46,13 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 router.post('/', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const input = readContactInput(req.body);
     if (typeof input === 'string') {
       return res.status(400).json({ error: input });
     }
-    const contact = await createContact(userId!, input);
+    const contact = await createContact(userId, input);
     if (!contact) {
       return res.status(404).json({ error: 'Company not found' });
     }
@@ -67,14 +66,14 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 router.put('/:id', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const input = readContactInput(req.body);
     if (typeof input === 'string') {
       return res.status(400).json({ error: input });
     }
     const id = parseId(req.params.id);
-    const contact = id === null ? null : await updateContact(userId!, id, input);
+    const contact = id === null ? null : await updateContact(userId, id, input);
     if (!contact) {
       return res.status(404).json({ error: 'Contact or company not found' });
     }
@@ -85,10 +84,10 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 router.delete('/:id', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const id = parseId(req.params.id);
-    const contact = id === null ? null : await deleteContact(userId!, id);
+    const contact = id === null ? null : await deleteContact(userId, id);
     if (!contact) {
       return res.status(404).json({ error: 'Contact not found' });
     }

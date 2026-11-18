@@ -38,7 +38,7 @@ Local DB is Postgres, database `jobtracker`. Server tests: `cd server && npm tes
 ## Server architecture
 
 - `src/app.ts` builds the Express app (exported so tests can import it) and `src/index.ts` only calls `listen`. `app.ts` mounts routers: `/companies`, `/applications`, `/contacts`, `/interview_stages`, `/resumes`. `dotenv.config()` happens in `src/db.ts`, and `app.ts` imports `./db` first (as a side-effect import) so the secrets are loaded before any module that reads `process.env` at import time (the future AI modules will).
-- Every route uses `requireAuth` ([middleware.ts](server/src/middleware.ts)) and reads the user with `getAuth(req).userId`. Routes only handle HTTP (read the request, check the input, call a repository, send the answer); all SQL lives in `src/repositories/` (Drizzle).
+- Every route uses `requireAuth` ([middleware.ts](server/src/middleware.ts)) and reads the user with `currentUserId(req)` (never `getAuth(req).userId!`: the helper throws if there is no user, so a route missing `requireAuth` fails loudly instead of running with no user). Routes only handle HTTP (read the request, check the input, call a repository, send the answer); all SQL lives in `src/repositories/` (Drizzle).
 - `src/routes/applications.ts`: CRUD plus `/:id/interview_stages`. The v1 job-posting, match and suggestion routes and the AI helper files were deleted (spec ticket 19); their database tables were removed from the schema.
 
 ### Conventions that matter
@@ -68,7 +68,6 @@ Phase 0 fixed the signed-out `Bearer null` requests, the raw database errors sen
 - The v1 AI features are gone, so the AI-related problems found earlier (unvalidated Claude replies, no spending limits, no loading state on the paid buttons, no prompt-injection defenses) are now **requirements for the v2 AI tickets** in `docs/v2-spec.md`, not bugs in this code.
 - Input validation is limited to blank-name checks; there is no schema-based validation of request bodies.
 - Route input checks are hand-written per route (`readXInput` functions); there is no schema-based validation library yet (Zod is planned).
-- Routes use `getAuth(req).userId!` (trusting `requireAuth` ran first). A `currentUserId(req)` helper that throws when there is no user is proposed but not yet approved.
 - `npm audit` reports vulnerable dependencies (see the dependency ticket in the spec).
 
 ## Working style for this repo

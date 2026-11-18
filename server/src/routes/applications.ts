@@ -1,6 +1,5 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware'
-import { getAuth } from '@clerk/express'
+import { requireAuth, currentUserId } from '../middleware'
 import { sendServerError, isBlank, errorCode } from '../errors'
 import { parseId, isId } from '../parseId'
 import { createApplication, deleteApplication, getApplication, listApplications, updateApplication } from '../repositories/applications'
@@ -37,22 +36,22 @@ function readApplicationInput(body: Record<string, unknown>): ApplicationInput |
 }
 
 router.get('/', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
-    res.json(await listApplications(userId!));
+    res.json(await listApplications(userId));
   } catch (err) {
     sendServerError(res, err);
   }
 });
 
 router.post('/', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const input = readApplicationInput(req.body);
     if (typeof input === 'string') {
       return res.status(400).json({ error: input });
     }
-    const application = await createApplication(userId!, input);
+    const application = await createApplication(userId, input);
     if (!application) {
       return res.status(403).json({ error: 'User not allowed access to company' });
     }
@@ -67,10 +66,10 @@ router.post('/', requireAuth, async (req, res) => {
 
 //404 is good here because it doesn't reveal "exists but not yours"
 router.get('/:id', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const id = parseId(req.params.id);
-    const application = id === null ? null : await getApplication(userId!, id);
+    const application = id === null ? null : await getApplication(userId, id);
     if (!application) {
       return res.status(404).json({ error: 'Application not found' });
     }
@@ -81,14 +80,14 @@ router.get('/:id', requireAuth, async (req, res) => {
 });
 
 router.put('/:id', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const input = readApplicationInput(req.body);
     if (typeof input === 'string') {
       return res.status(400).json({ error: input });
     }
     const id = parseId(req.params.id);
-    const application = id === null ? null : await updateApplication(userId!, id, input);
+    const application = id === null ? null : await updateApplication(userId, id, input);
     if (!application) {
       return res.status(404).json({ error: 'Application or company not found' });
     }
@@ -99,10 +98,10 @@ router.put('/:id', requireAuth, async (req, res) => {
 });
 
 router.delete('/:id', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const id = parseId(req.params.id);
-    const application = id === null ? null : await deleteApplication(userId!, id);
+    const application = id === null ? null : await deleteApplication(userId, id);
     if (!application) {
       return res.status(404).json({ error: 'Application not found' });
     }
@@ -113,10 +112,10 @@ router.delete('/:id', requireAuth, async (req, res) => {
 });
 
 router.get('/:id/interview_stages', requireAuth, async (req, res) => {
-  const { userId } = getAuth(req);
+  const userId = currentUserId(req);
   try {
     const id = parseId(req.params.id);
-    res.json(id === null ? [] : await listInterviewStagesByApplication(userId!, id));
+    res.json(id === null ? [] : await listInterviewStagesByApplication(userId, id));
   } catch (err) {
     sendServerError(res, err);
   }
