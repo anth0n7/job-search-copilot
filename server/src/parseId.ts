@@ -5,3 +5,8 @@ export function parseId(raw: unknown): number | null {
   const id = Number(raw);
   return id <= 2147483647 ? id : null;
 }
+
+// For ids sent in a request body (e.g. company_id): a positive whole number that fits in a Postgres integer.
+export function isId(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 2147483647;
+}
