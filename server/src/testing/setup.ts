@@ -19,7 +19,7 @@ beforeEach(async () => {
   const { rows } = await pool.query('SELECT current_database() AS db');
   if (!rows[0].db.endsWith('_test')) throw new Error(`Refusing to wipe database "${rows[0].db}"`);
 
-  await pool.query('TRUNCATE companies, applications, contacts, interview_stages, resumes RESTART IDENTITY CASCADE');
+  await pool.query('TRUNCATE companies, applications, contacts, interview_stages, resumes, company_boards, listings RESTART IDENTITY CASCADE');
   vi.clearAllMocks();
 });
 
