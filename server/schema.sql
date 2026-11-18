@@ -18,7 +18,7 @@ CREATE TABLE applications (
   companies(id) ON DELETE CASCADE,
   role_title TEXT NOT NULL,
   job_posting_url TEXT,
-  status TEXT NOT NULL DEFAULT 'saved',
+  status TEXT NOT NULL DEFAULT 'saved' CHECK (status IN ('saved', 'applied', 'interviewing', 'rejected', 'offer')),
   application_date DATE,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -40,7 +40,7 @@ CREATE TABLE interview_stages(
   application_id INTEGER NOT NULL REFERENCES
   applications(id) ON DELETE CASCADE,
   stage_name TEXT NOT NULL,
-  scheduled_date TIMESTAMP,
+  scheduled_date TIMESTAMPTZ,
   completed BOOLEAN DEFAULT FALSE,
   notes TEXT
 );
@@ -80,3 +80,10 @@ CREATE TABLE suggestions(
   cover_letter_draft TEXT NOT NULL,
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Postgres does not index foreign keys automatically; the ownership-check joins use these
+CREATE INDEX companies_user_id_idx ON companies(user_id);
+CREATE INDEX applications_company_id_idx ON applications(company_id);
+CREATE INDEX contacts_company_id_idx ON contacts(company_id);
+CREATE INDEX interview_stages_application_id_idx ON interview_stages(application_id);
+CREATE INDEX matches_application_id_idx ON matches(application_id);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Show, SignInButton, SignUpButton, UserButton} from '@clerk/react';
+import { Show, SignInButton, SignUpButton, UserButton, useAuth} from '@clerk/react';
 import type { Company, Application } from './types';
 import Companies from './Companies';
 import Applications from './Applications';
@@ -27,6 +27,8 @@ function App() {
   const [isLoadingApplications, setIsLoadingApplications] = useState(true);
   const apiFetch = useApi();
   const { setErrorMessage } = useError();
+  //isLoaded: Clerk has finished checking who is signed in. isSignedIn: there is a signed-in user.
+  const { isLoaded, isSignedIn } = useAuth();
   //useAuth() returns an object with several things on it
 
   //creating a callback prop - to notify the parent that something happened
@@ -40,20 +42,36 @@ function App() {
     .finally(() => setIsLoadingApplications(false));
 }
 
+  //Load the data once Clerk knows who is signed in, reload it when someone signs in, and clear it on sign-out.
   //get token returns a promise (async). Fetch can't run until getToken resolves
   useEffect(() =>{
-    apiFetch('/companies')
-      .then((data) =>{setCompanies(data)})
-      .catch((err) => {console.error('Failed to fetch companies:', err);
-        setErrorMessage(err.message);
-      })
-      .finally(() => setIsLoadingCompanies(false));
-  }, []);
+    if(!isLoaded) return;
+    if(!isSignedIn){
+      setCompanies([]);
+      setApplications([]);
+      setIsLoadingCompanies(false);
+      setIsLoadingApplications(false);
+      return;
+    }
 
- 
-  useEffect(() =>{
-    fetchApplications();
-    }, []);
+    //if the user signs out while a request is in flight, ignore its answer so old data doesn't reappear
+    let ignore = false;
+    setIsLoadingCompanies(true);
+    setIsLoadingApplications(true);
+    apiFetch('/companies')
+      .then((data) =>{ if(!ignore) setCompanies(data)})
+      .catch((err) => {console.error('Failed to fetch companies:', err);
+        if(!ignore) setErrorMessage(err.message);
+      })
+      .finally(() => { if(!ignore) setIsLoadingCompanies(false)});
+    apiFetch('/applications')
+      .then((data) =>{ if(!ignore) setApplications(data)})
+      .catch((err) => {console.error('Failed to fetch applications', err);
+        if(!ignore) setErrorMessage(err.message);
+      })
+      .finally(() => { if(!ignore) setIsLoadingApplications(false)});
+    return () => { ignore = true; };
+  }, [isLoaded, isSignedIn]);
 
     const navLinkClass = ({ isActive }: {isActive: boolean}) =>
       `flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${

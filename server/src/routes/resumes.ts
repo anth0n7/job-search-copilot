@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { requireAuth } from '../middleware'
 import { getAuth } from '@clerk/express'
 import {pool} from '../db'
+import { sendServerError } from '../errors'
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.put('/', requireAuth, async(req, res) =>{
         );
         res.json(result.rows[0]);
     } catch (err) {
-        res.status(500).json({error: String(err)});    
+        sendServerError(res, err);    
     }
 });
 
@@ -29,7 +30,7 @@ router.get('/', requireAuth, async(req, res) =>{
         }
         res.json(result.rows[0]);
     } catch (err) {
-        res.status(500).json({error: String(err)});    
+        sendServerError(res, err);    
     }
 });
 

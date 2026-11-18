@@ -6,7 +6,8 @@ import { defineConfig } from 'vitest/config';
 // the tests from loading real API keys at all.
 export default defineConfig({
   test: {
-    env: { DATABASE_URL: 'postgresql://localhost:5432/jobtracker_test', ENV_FILE: '/dev/null' },
+    // TZ is set to a non-UTC zone on purpose so time-zone bugs show up in tests
+    env: { DATABASE_URL: 'postgresql://localhost:5432/jobtracker_test', ENV_FILE: '/dev/null', TZ: 'America/New_York' },
     globalSetup: './test/globalSetup.ts',
     fileParallelism: false,
   },

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { requireAuth } from '../middleware'
 import { getAuth } from '@clerk/express'
 import {pool} from '../db'
+import { sendServerError, isBlank } from '../errors'
 
 const router = Router();
 
@@ -13,7 +14,7 @@ router.get('/', requireAuth, async (req, res) =>{
     );
     res.json(result.rows);
   } catch (err){
-    res.status(500).json({error: String(err)});
+    sendServerError(res, err);
   }
 });
 
@@ -23,12 +24,15 @@ router.post('/', requireAuth, async (req, res) =>{
   const { userId } = getAuth(req);
   try {
     const {name, website, notes} = req.body;
+    if(isBlank(name)){
+      return res.status(400).json({error: 'Name is required'});
+    }
     const result = await pool.query('INSERT INTO companies (name, website, notes, user_id) VALUES ($1, $2, $3, $4) RETURNING * ',
       [name, website, notes, userId]
     );
     res.json(result.rows[0]);
   } catch (err){
-    res.status(500).json({error: String(err)});
+    sendServerError(res, err);
   }
 });
 
@@ -44,7 +48,7 @@ router.get('/:id', requireAuth, async (req, res) =>{
     }
     res.json(result.rows[0]);
   } catch (err){
-    res.status(500).json({error: String(err)});
+    sendServerError(res, err);
   }
 });
 
@@ -54,6 +58,9 @@ router.put('/:id', requireAuth, async (req, res) =>{
   try{
     const {name, website, notes} = req.body;
     const id = req.params.id;
+    if(isBlank(name)){
+      return res.status(400).json({error: 'Name is required'});
+    }
     const result = await pool.query('UPDATE companies SET name = $1, website = $2, notes = $3 WHERE id = $4 AND user_id = $5 RETURNING *',
       [name, website, notes, id, userId]
     );
@@ -62,7 +69,7 @@ router.put('/:id', requireAuth, async (req, res) =>{
     }
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({error: String(err)});
+    sendServerError(res, err);
   }
 });
 
@@ -78,7 +85,7 @@ router.delete('/:id', requireAuth, async (req, res) =>{
     }
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({error: String(err)});
+    sendServerError(res, err);
   } 
 });
 
@@ -86,12 +93,12 @@ router.get('/:id/contacts', requireAuth, async(req, res) => {
     const { userId } = getAuth(req);
     try{
         const companyID = req.params.id;
-        const result = await pool.query('SELECT contacts.* FROM contacts JOIN companies ON contacts.company_id = companies.id WHERE companies.id = $1 AND companies.user_id = $2',
+        const result = await pool.query('SELECT contacts.* FROM contacts JOIN companies ON contacts.company_id = companies.id WHERE companies.id = $1 AND companies.user_id = $2 ORDER BY contacts.id DESC',
             [companyID, userId]
         );
         res.json(result.rows)
     } catch (err) {
-        res.status(500).json({error: String(err)});
+        sendServerError(res, err);
     }
 });
 

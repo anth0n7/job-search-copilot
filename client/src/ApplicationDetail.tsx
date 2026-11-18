@@ -9,6 +9,8 @@ import JobPostings from './JobPostings'
 import Matches from './Matches'
 import Suggestions from './Suggestions'
 import StatusBadge  from './StatusBadge';
+import { formatDate } from './dateUtils';
+import { normalizeWebsite } from './urlUtils';
 
 
 interface ApplicationDetailsProp{
@@ -50,7 +52,7 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
                        <div className="mt-6 divider pt-4">
                             <div className="flex gap-1">
                                 <span className="font-medium">Company Website:</span>
-                                <a href={company.website ?? undefined} className="text-sky-300 hover:underline">{company.website}</a>
+                                <a href={normalizeWebsite(company.website)} className="text-sky-300 hover:underline">{company.website}</a>
                             </div>
 
                             <div className="mt-6 divider pt-4">
@@ -66,7 +68,7 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
 
                     <div className="flex gap-1">
                         <span className="font-medium">Application Date:</span>
-                        <p>{new Date(application.application_date).toLocaleDateString()}</p>
+                        <p>{formatDate(application.application_date)}</p>
                     </div>
 
                     <div className="flex-col gap-1">

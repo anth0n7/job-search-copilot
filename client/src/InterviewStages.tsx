@@ -5,6 +5,7 @@ import { useError } from './useError'
 import { Trash2, Pencil, Plus, Check, X, CalendarClock} from 'lucide-react';
 import Modal from './Modal';
 import ConfirmDialog from './ConfirmDialog';
+import { toDateTimeLocalValue, fromDateTimeLocalValue } from './dateUtils';
 
 
 
@@ -41,7 +42,7 @@ function InterviewStages({applicationID} : InterviewStagesProps){
             method: 'DELETE'
         })
         .then(() => {
-            setInterviewStages(interview_stages.filter((current_interview_stage) => current_interview_stage.id !== deletedId));
+            setInterviewStages((current) => current.filter((current_interview_stage) => current_interview_stage.id !== deletedId));
             if(editingId === deletedId){
                 setEditingId(null);
             }
@@ -58,13 +59,24 @@ function InterviewStages({applicationID} : InterviewStagesProps){
         setCompleted(editedInterviewStage.completed ?? false);
         setEditingId(editedInterviewStage.id);
         setNotes(editedInterviewStage.notes ?? '');
-        setScheduledDate(editedInterviewStage.scheduled_date ?? '');
+        //the server sends a UTC timestamp; the input needs local time
+        setScheduledDate(toDateTimeLocalValue(editedInterviewStage.scheduled_date));
         setStageName(editedInterviewStage.stage_name);
+    }
+
+    function resetForm(){
+        setCompleted(false);
+        setIsModalOpen(false);
+        setEditingId(null);
+        setNotes('');
+        setScheduledDate('');
+        setStageName('');
     }
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
         e.preventDefault();
-        const dateToSend = scheduled_date === '' ? null : scheduled_date;
+        //convert the input's local time to a UTC timestamp so the server stores the exact moment
+        const dateToSend = fromDateTimeLocalValue(scheduled_date);
         if(editingId !== null){
             apiFetch(`/interview_stages/${editingId}`, {
                method: 'PUT',
@@ -72,9 +84,11 @@ function InterviewStages({applicationID} : InterviewStagesProps){
                body: JSON.stringify({application_id: applicationID, completed, notes, scheduled_date: dateToSend, stage_name})
             })
             .then((editedInterviewStage) =>{
-                setInterviewStages(interview_stages.map((current_interview_stage) =>(
+                setInterviewStages((current) => current.map((current_interview_stage) =>(
                     current_interview_stage.id === editingId ? editedInterviewStage : current_interview_stage
                 )));
+                //only close and clear the form once the server accepted it
+                resetForm();
             })
             .catch((err) =>{console.error('Failed to fetch interview stages:', err);
                 setErrorMessage(err.message);
@@ -87,28 +101,17 @@ function InterviewStages({applicationID} : InterviewStagesProps){
                body: JSON.stringify({application_id: applicationID, completed, notes, scheduled_date: dateToSend, stage_name})
             })
             .then((interview_stage) =>{
-                setInterviewStages([interview_stage, ...interview_stages]);
+                setInterviewStages((current) => [interview_stage, ...current]);
+                resetForm();
             })
             .catch((err) =>{console.error('Failed to fetch interview stages:', err);
                 setErrorMessage(err.message);
             })
         }
-        setCompleted(false);
-        setIsModalOpen(false);
-        setEditingId(null);
-        setNotes('');
-        setScheduledDate('');
-        setStageName('');
-
     }
 
     function handleCancel(){
-        setIsModalOpen(false);
-        setCompleted(false);
-        setEditingId(null);
-        setNotes('');
-        setScheduledDate('');
-        setStageName('');
+        resetForm();
     }
 
 
@@ -181,7 +184,7 @@ function InterviewStages({applicationID} : InterviewStagesProps){
              <Modal title={editingId === null ? "Add Interview Stage" : "Edit Interview Stage"} onClose={handleCancel}>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <label className="form-label" htmlFor="stage_name">Stage Name</label>
-                        <input id="stage_name" className="input-field" value={stage_name} onChange={(e) => setStageName(e.target.value)}/>
+                        <input id="stage_name" className="input-field" value={stage_name} required onChange={(e) => setStageName(e.target.value)}/>
 
                         <label className="form-label" htmlFor="scheduled_date">Scheduled Date</label>
                         <input id="scheduled_date" className="input-field" value={scheduled_date} type="datetime-local" onChange={(e) => setScheduledDate(e.target.value)}/>

@@ -1,30 +1,43 @@
 import { useAuth } from '@clerk/react'
 import { API_URL } from './config'
 
+//Turns a failed response into a readable message.
+//The body might be JSON, an HTML page (e.g. a 413 from the server) or empty, so we never assume it is JSON.
+async function errorMessageFor(response: Response): Promise<string> {
+    try {
+        const data = await response.json();
+        if (typeof data?.error === 'string' && data.error !== '') return data.error;
+    } catch {
+        // body was not JSON, fall through to the status-based messages
+    }
+    if (response.status === 413) return 'Request too large';
+    return `Request failed (${response.status})`;
+}
+
 //we use useApi because we need getToken
 //getToken is a hook and can onlu be called from inside a react component.
 export function useApi(){
     const { getToken } = useAuth();
 
-    function apiFetch(path: string, options: RequestInit = {}){
-        //we need returns because apiFetch needs to return something that behaves like a promise otherwise it'll give undefined
-        return getToken().then((token) => {
-            return fetch(`${API_URL}${path}`, {
+    async function apiFetch(path: string, options: RequestInit = {}){
+        const token = await getToken();
+        let response: Response;
+        try {
+            response = await fetch(`${API_URL}${path}`, {
                 ...options,
                 headers: {
                     ...options.headers,
                     Authorization: `Bearer ${token}`,
                 },
-            })
-            .then((response) => {
-                if(!response.ok){
-                    return response.json().then((errorData) => {
-                        throw new Error(errorData.error)
-                    })
-                }
-                return response.json();
-            })
-        })
+            });
+        } catch {
+            // fetch only throws when the request never got an answer (server down, offline)
+            throw new Error("Can't reach the server. Is it running?");
+        }
+        if (!response.ok) {
+            throw new Error(await errorMessageFor(response));
+        }
+        return response.json();
     }
 
     return apiFetch;

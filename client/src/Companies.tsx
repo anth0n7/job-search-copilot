@@ -37,15 +37,15 @@ function Companies({companies, applications, setCompanies, onCompanyDeleted, isL
                 body: JSON.stringify({name, website, notes}),
             })
             .then((company) =>{
-                setCompanies([company, ...companies]);
+                setCompanies((current) => [company, ...current]);
+                //only clear the form once the server accepted it
+                setName('');
+                setWebsite('');
+                setNotes('');
             })
             .catch((err) => {console.error('Failed to fetch company:', err);
                 setErrorMessage(err.message);
             });
-
-        setName('');
-        setWebsite('');
-        setNotes('');
     }
 
   function handleDelete(deletedID: number){
@@ -53,7 +53,7 @@ function Companies({companies, applications, setCompanies, onCompanyDeleted, isL
         method: 'DELETE'
     })
     .then(() => {
-        setCompanies(companies.filter((keptCompany) => keptCompany.id !== deletedID));
+        setCompanies((current) => current.filter((keptCompany) => keptCompany.id !== deletedID));
             onCompanyDeleted();
         })
     .catch((err) => {console.error('Failed to fetch company:', err);
@@ -70,14 +70,15 @@ function Companies({companies, applications, setCompanies, onCompanyDeleted, isL
     setModalNotes(company.notes ?? '');
   }
 
-  function handleSaveModal(){
+  function handleSaveModal(e: React.SubmitEvent<HTMLFormElement>){
+    e.preventDefault();
     apiFetch(`/companies/${selectedCompany?.id}`, {
         method: 'PUT',
         headers: {'Content-Type' : 'application/json'},
         body: JSON.stringify({name: modalName, website: modalWebsite, notes: modalNotes}),
     })
     .then((selectCompany) => {
-            setCompanies(companies.map((company) => (
+            setCompanies((current) => current.map((company) => (
             company.id === selectCompany.id ? selectCompany : company
         )));
         setSelectedCompany(null)
@@ -128,19 +129,22 @@ function Companies({companies, applications, setCompanies, onCompanyDeleted, isL
             {selectedCompany && (
                 <Modal title="Company Info" onClose={() => setSelectedCompany(null)} maxWidth="max-w-2xl">
                     <div className="space-y-4">
+                        {/* The modal also holds the contacts section, which has its own <form>, and forms cannot be nested.
+                            So this form is empty, and the fields and Save button below join it with the form="..." attribute. */}
+                        <form id="company-edit-form" onSubmit={handleSaveModal} />
                         <div>
                             <label className="form-label" htmlFor="modal_name">Name:</label>
-                            <input id="modal_name" className="input-field" required value={modalName} onChange={(e) => setModalName(e.target.value)}/>
+                            <input id="modal_name" form="company-edit-form" className="input-field" required value={modalName} onChange={(e) => setModalName(e.target.value)}/>
                         </div>
 
                         <div>
                             <label className="form-label" htmlFor="modal_website">Website:</label>
-                            <input id="modal_website" className="input-field" value={modalWebsite} onChange={(e) => setModalWebsite(e.target.value)}/>
+                            <input id="modal_website" form="company-edit-form" className="input-field" value={modalWebsite} onChange={(e) => setModalWebsite(e.target.value)}/>
                         </div>
 
                         <div>
                             <label className="form-label" htmlFor="modal_notes">Notes:</label>
-                            <input id="modal_notes" className="input-field" value={modalNotes} onChange={(e) => setModalNotes(e.target.value)}/>
+                            <input id="modal_notes" form="company-edit-form" className="input-field" value={modalNotes} onChange={(e) => setModalNotes(e.target.value)}/>
                         </div>
 
                         <div className="divider pt-4">
@@ -158,7 +162,7 @@ function Companies({companies, applications, setCompanies, onCompanyDeleted, isL
                                 <X size={16} />
                                 Cancel
                             </button>
-                            <button className="btn-primary" type="button" onClick={() => handleSaveModal()}>
+                            <button className="btn-primary" type="submit" form="company-edit-form">
                                 <Check size={16} />
                                 Save
                             </button>

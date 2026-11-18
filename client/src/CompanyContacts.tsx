@@ -33,6 +33,15 @@ function CompanyContacts({companyID}: ContactsProps){
         .finally(() => setIsLoading(false));
     }, [companyID]);
 
+    function resetForm(){
+        setEmail('');
+        setLinkedinUrl('');
+        setEditingId(null);
+        setRole('');
+        setNotes('');
+        setName('');
+    }
+
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
         e.preventDefault();
         if(editingId !== null){
@@ -42,9 +51,11 @@ function CompanyContacts({companyID}: ContactsProps){
                 body: JSON.stringify({name, role, email, linkedin_url, notes, company_id: companyID})
             })
             .then((editedContact) =>{
-                setContacts(contacts.map((currentContact) =>(
+                setContacts((current) => current.map((currentContact) =>(
                     currentContact.id === editingId ? editedContact : currentContact
                 )));
+                //only clear the form once the server accepted it
+                resetForm();
             })
             .catch((err) =>{console.error('Failed to fetch contact:', err);
                 setErrorMessage(err.message);
@@ -56,17 +67,14 @@ function CompanyContacts({companyID}: ContactsProps){
                 headers: {'Content-Type' : 'application/json'},
                 body: JSON.stringify({name, role, email, linkedin_url, notes, company_id: companyID})
             })
-            .then((contact) =>{setContacts([contact, ...contacts])})
+            .then((contact) =>{
+                setContacts((current) => [contact, ...current]);
+                resetForm();
+            })
             .catch((err) =>{console.error('Failed to fetch contact:', err);
                 setErrorMessage(err.message);
             })
         }
-        setEmail('');
-        setLinkedinUrl('');
-        setEditingId(null);
-        setRole('');
-        setNotes('');
-        setName('');
     }
 
     function handleDelete(deletedId: number){
@@ -74,7 +82,7 @@ function CompanyContacts({companyID}: ContactsProps){
             method: 'DELETE'
         })
         .then(() =>{
-            setContacts(contacts.filter((currentContact) => currentContact.id !== deletedId));
+            setContacts((current) => current.filter((currentContact) => currentContact.id !== deletedId));
             if (editingId === deletedId){
                 setEditingId(null);
             }
@@ -95,12 +103,7 @@ function CompanyContacts({companyID}: ContactsProps){
     }
 
     function handleCancel(){
-        setEmail('');
-        setLinkedinUrl('');
-        setEditingId(null);
-        setRole('');
-        setNotes('');
-        setName('');
+        resetForm();
     }
 
 
@@ -167,7 +170,7 @@ function CompanyContacts({companyID}: ContactsProps){
 
             <form onSubmit={handleSubmit} className="card p-4 mt-4 space-y-4">
                 <label htmlFor="name" className="form-label">Name</label>
-                <input className="input-field" id="name" value={name} onChange={(e) => setName(e.target.value)}/>
+                <input className="input-field" id="name" value={name} required onChange={(e) => setName(e.target.value)}/>
 
                 <label htmlFor="role" className="form-label">Role</label>
                 <input className="input-field" id="role" value={role} onChange={(e) => setRole(e.target.value)}/>

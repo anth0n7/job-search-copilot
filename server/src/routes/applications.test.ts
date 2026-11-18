@@ -72,6 +72,112 @@ describe('authentication', () => {
   });
 });
 
+describe('error responses', () => {
+  it('hides database error details on a 500', async () => {
+    // "abc" is not a valid integer id, so Postgres throws
+    const res = await asA(request(app).get('/applications/abc')).expect(500);
+    expect(res.body.error).toBe('Something went wrong on the server.');
+  });
+
+  it('returns JSON (not HTML) when the request body is too large', async () => {
+    const res = await asA(request(app).put('/resumes')).send({ resume_text: 'x'.repeat(200_000) }).expect(413);
+    expect(res.body.error).toMatch(/too large/i);
+  });
+
+  it('returns JSON (not HTML) when the request body is malformed JSON', async () => {
+    const res = await asA(request(app).put('/resumes'))
+      .set('Content-Type', 'application/json').send('{ not json').expect(400);
+    expect(res.body.error).toMatch(/invalid json/i);
+  });
+});
+
+describe('dates and times', () => {
+  it('returns an application date as a plain YYYY-MM-DD string', async () => {
+    const res = await asA(request(app).post('/applications'))
+      .send({ company_id: companyA.id, role_title: 'Dated', status: 'saved', application_date: '2026-11-09' }).expect(200);
+    expect(res.body.application_date).toBe('2026-11-09');
+    const again = await asA(request(app).get(`/applications/${res.body.id}`)).expect(200);
+    expect(again.body.application_date).toBe('2026-11-09');
+  });
+
+  it('stores an interview time as the same moment it was sent', async () => {
+    const sent = '2026-11-09T15:00:00.000Z';
+    const created = await asA(request(app).post('/interview_stages'))
+      .send({ application_id: appA.id, stage_name: 'Phone', scheduled_date: sent }).expect(200);
+    expect(new Date(created.body.scheduled_date).toISOString()).toBe(sent);
+
+    // saving again with the value we got back must not move the time
+    const edited = await asA(request(app).put(`/interview_stages/${created.body.id}`))
+      .send({ application_id: appA.id, stage_name: 'Phone', scheduled_date: created.body.scheduled_date, completed: false, notes: 'x' }).expect(200);
+    expect(new Date(edited.body.scheduled_date).toISOString()).toBe(sent);
+  });
+});
+
+describe('database rules', () => {
+  it('updates updated_at when an application is edited', async () => {
+    const before = (await asA(request(app).get(`/applications/${appA.id}`)).expect(200)).body;
+    await new Promise((r) => setTimeout(r, 20));
+    const after = (await asA(request(app).put(`/applications/${appA.id}`))
+      .send({ company_id: companyA.id, role_title: 'Renamed', status: 'applied' }).expect(200)).body;
+    expect(new Date(after.updated_at).getTime()).toBeGreaterThan(new Date(before.updated_at).getTime());
+  });
+
+  it('rejects a status that is not one of the five allowed values', async () => {
+    await asA(request(app).put(`/applications/${appA.id}`))
+      .send({ company_id: companyA.id, role_title: 'Engineer', status: 'banana' }).expect(400);
+  });
+
+  it('has indexes on the foreign-key columns', async () => {
+    const { rows } = await pool.query("SELECT indexname FROM pg_indexes WHERE schemaname = 'public'");
+    const names = rows.map((r: { indexname: string }) => r.indexname);
+    for (const wanted of ['companies_user_id_idx', 'applications_company_id_idx', 'contacts_company_id_idx', 'interview_stages_application_id_idx', 'matches_application_id_idx']) {
+      expect(names).toContain(wanted);
+    }
+  });
+});
+
+describe('required fields', () => {
+  it('rejects a blank company name on create and edit', async () => {
+    await asA(request(app).post('/companies')).send({ name: '   ' }).expect(400);
+    await asA(request(app).put(`/companies/${companyA.id}`)).send({ name: '' }).expect(400);
+  });
+
+  it('rejects a blank contact name', async () => {
+    await asA(request(app).post('/contacts')).send({ company_id: companyA.id, name: ' ' }).expect(400);
+  });
+
+  it('rejects a blank interview stage name', async () => {
+    await asA(request(app).post('/interview_stages')).send({ application_id: appA.id, stage_name: '' }).expect(400);
+  });
+
+  it('rejects a blank application role title', async () => {
+    await asA(request(app).post('/applications'))
+      .send({ company_id: companyA.id, role_title: '', status: 'saved' }).expect(400);
+  });
+});
+
+describe('list order', () => {
+  it('returns interview stages newest first', async () => {
+    const make = (name: string) => asA(request(app).post('/interview_stages')).send({ application_id: appA.id, stage_name: name }).expect(200);
+    await make('first'); await make('second'); await make('third');
+    const res = await asA(request(app).get(`/applications/${appA.id}/interview_stages`)).expect(200);
+    expect(res.body.map((s: { stage_name: string }) => s.stage_name)).toEqual(['third', 'second', 'first']);
+  });
+});
+
+describe('cors and the database pool', () => {
+  it('only allows the frontend origin', async () => {
+    const ok = await request(app).get('/applications').set('Origin', 'http://localhost:5173');
+    expect(ok.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    const bad = await request(app).get('/applications').set('Origin', 'https://evil.example');
+    expect(bad.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
+  it('does not crash when an idle database connection errors', () => {
+    expect(() => pool.emit('error', new Error('connection lost'))).not.toThrow();
+  });
+});
+
 describe('application ownership', () => {
   //Test 2: list only your own data
   it("lists only the caller's applications", async () => {

@@ -18,7 +18,7 @@ interface ApplicationsProps {
 function Applications({companies, applications, setApplications, isLoading}: ApplicationsProps){
     const [role_title, setRoleTitle] = useState('');
     const [job_posting_url, setJobUrl] = useState('');
-    const [status, setStatus] = useState('');
+    const [status, setStatus] = useState('saved');
     const [application_date, setApplicationDate] = useState('');
     const [company_id, setCompanyId] = useState<number | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -26,6 +26,16 @@ function Applications({companies, applications, setApplications, isLoading}: App
     const navigate = useNavigate();
     const apiFetch = useApi();
     const {setErrorMessage} = useError();
+
+    //put the form back to its empty state (status goes back to 'saved', the dropdown's first option)
+    function resetForm(){
+        setRoleTitle('');
+        setJobUrl('');
+        setStatus('saved');
+        setApplicationDate('');
+        setCompanyId(null);
+        setEditingId(null);
+    }
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>){
         e.preventDefault();
@@ -37,9 +47,12 @@ function Applications({companies, applications, setApplications, isLoading}: App
                 body: JSON.stringify({role_title, job_posting_url, status, application_date: dateToSend, company_id}),
             })
             .then((editedApplication) => {
-                setApplications(applications.map((currentApplication) =>(
+                //(current) => ... uses the newest list, not the one from when the button was clicked
+                setApplications((current) => current.map((currentApplication) =>(
                     currentApplication.id === editingId ? editedApplication : currentApplication
                 )));
+                //only clear the form once the server accepted it, so a failed save doesn't lose what was typed
+                resetForm();
             })
             .catch((err) =>{console.error('Failed to fetch application', err)
                 setErrorMessage(err.message);
@@ -52,19 +65,13 @@ function Applications({companies, applications, setApplications, isLoading}: App
                 body:  JSON.stringify({role_title, job_posting_url, status, application_date: dateToSend, company_id}),
             })
             .then((newApplication) =>{
-                setApplications([newApplication, ...applications]);
+                setApplications((current) => [newApplication, ...current]);
+                resetForm();
             })
             .catch((err) =>{console.error('Failed to fetch application', err)
                 setErrorMessage(err.message);
             });
         }
-
-        setRoleTitle('');
-        setJobUrl('');
-        setStatus('');
-        setApplicationDate('');
-        setCompanyId(null);
-        setEditingId(null);
     }
 
 
@@ -73,7 +80,7 @@ function Applications({companies, applications, setApplications, isLoading}: App
             method: 'DELETE'
         })
         .then(() =>{
-            setApplications(applications.filter((keptApplication) => keptApplication.id !== deletedId));
+            setApplications((current) => current.filter((keptApplication) => keptApplication.id !== deletedId));
             if(editingId === deletedId){
                 setEditingId(null);
             }
@@ -95,12 +102,7 @@ function Applications({companies, applications, setApplications, isLoading}: App
     }
 
     function handleCancel(){
-        setRoleTitle('');
-        setJobUrl('');
-        setStatus('');
-        setApplicationDate('');
-        setCompanyId(null);
-        setEditingId(null);
+        resetForm();
     }
 
     return(

@@ -2,18 +2,19 @@ import { Router } from 'express'
 import { requireAuth } from '../middleware'
 import { getAuth } from '@clerk/express'
 import {pool} from '../db'
+import { sendServerError, isBlank } from '../errors'
 
 const router = Router()
 
 router.get('/', requireAuth, async (req, res) =>{
   const { userId } = getAuth(req);
   try{
-    const result = await pool.query('SELECT interview_stages.* FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE companies.user_id = $1',
+    const result = await pool.query('SELECT interview_stages.* FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE companies.user_id = $1 ORDER BY interview_stages.id DESC',
       [userId]
     );
     res.json(result.rows);
   } catch (err) {
-    res.status(500).json({error: String(err)});
+    sendServerError(res, err);
   }
 });
 
@@ -29,7 +30,7 @@ router.get('/:id', requireAuth, async (req, res) =>{
     }
     res.json(result.rows[0]);
   } catch (err){
-    res.status(500).json({error: String(err)});
+    sendServerError(res, err);
   }
 });
 
@@ -38,6 +39,9 @@ router.post('/', requireAuth, async (req, res) =>{
   try{
     const { application_id, stage_name, scheduled_date, completed, notes } = req.body;
     const completedValue = completed ?? false;
+    if(isBlank(stage_name)){
+      return res.status(400).json({error: 'Stage name is required'});
+    }
 
     const auth = await pool.query('SELECT applications.* FROM applications JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 AND companies.user_id = $2',
       [application_id, userId]
@@ -54,7 +58,7 @@ router.post('/', requireAuth, async (req, res) =>{
     if(err.code === '23503'){
       return res.status(400).json({error: 'That application does not exist'});
     }
-    res.status(500).json({error: String(err)});
+    sendServerError(res, err);
   }
 });
 
@@ -63,6 +67,9 @@ router.put('/:id', requireAuth, async (req, res) =>{
   try{
     const interviewStagesId = req.params.id;
     const {application_id, stage_name, scheduled_date, completed, notes} = req.body;
+    if(isBlank(stage_name)){
+      return res.status(400).json({error: 'Stage name is required'});
+    }
 
     const auth = await pool.query('SELECT interview_stages.id FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE interview_stages.id = $1 AND companies.user_id = $2',
       [interviewStagesId, userId]
@@ -86,7 +93,7 @@ router.put('/:id', requireAuth, async (req, res) =>{
     }
     res.json(result.rows[0]);
   } catch (err) {
-    res.status(500).json({error: String(err)});
+    sendServerError(res, err);
   }
 });
 
@@ -109,7 +116,7 @@ router.delete('/:id', requireAuth, async (req, res) =>{
     }
     res.json(result.rows[0]);
   } catch (err){
-    res.status(500).json({error: String(err)});
+    sendServerError(res, err);
   }
 });
 
