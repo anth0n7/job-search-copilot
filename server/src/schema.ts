@@ -104,3 +104,61 @@ export const resumes = pgTable('resumes', {
   updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   resume_text: text('resume_text'),
 });
+
+export const BOARD_PROVIDERS = ['greenhouse', 'lever', 'ashby'] as const;
+const providerList = sql.raw(BOARD_PROVIDERS.map((p) => `'${p}'`).join(', '));
+
+// Shared data: boards have no user_id because every user sees the same job listings (spec 3.8).
+// Only the fetcher touches these tables, never a user-facing route, so the ownership rule in owned.ts does not apply.
+export const companyBoards = pgTable(
+  'company_boards',
+  {
+    id: serial('id').primaryKey(),
+    provider: text('provider').notNull(),
+    // Goes inside a request URL, so the database refuses anything but the safe characters too.
+    board_token: text('board_token').notNull(),
+    company_name: text('company_name').notNull(),
+    last_fetched_at: timestamp('last_fetched_at', { withTimezone: true }),
+    // A short fixed message, never raw error text or a reply body.
+    last_fetch_error: text('last_fetch_error'),
+    created_at: createdAtColumn(),
+  },
+  (t) => [
+    check('company_boards_provider_valid', sql`${t.provider} in (${providerList})`),
+    check('company_boards_board_token_valid', sql`${t.board_token} ~ '^[a-z0-9_-]+$'`),
+    check('company_boards_company_name_valid', nameIsValid(t.company_name)),
+    uniqueIndex('company_boards_provider_token_unique').on(t.provider, t.board_token),
+  ],
+);
+
+export const listings = pgTable(
+  'listings',
+  {
+    id: serial('id').primaryKey(),
+    board_id: integer('board_id')
+      .notNull()
+      .references(() => companyBoards.id, { onDelete: 'cascade' }),
+    // The provider's own job id; with board_id it identifies a posting so a re-fetch updates it instead of duplicating it.
+    external_id: text('external_id').notNull(),
+    title: text('title').notNull(),
+    location: text('location'),
+    url: text('url').notNull(),
+    // Plain text: the fetcher strips the provider's HTML, so nothing downstream handles untrusted markup.
+    description_text: text('description_text').notNull(),
+    // Not every provider reports it.
+    posted_at: timestamp('posted_at', { withTimezone: true }),
+    first_seen_at: timestamp('first_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    last_seen_at: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+    // Set by the daily job (a later ticket) when a posting disappears from its board.
+    closed_at: timestamp('closed_at', { withTimezone: true }),
+  },
+  (t) => [
+    // Longer than the 200 allowed for names: real job titles can be long, and one oversized title must not make a whole board's fetch fail.
+    check('listings_title_valid', sql`length(btrim(${t.title})) between 1 and 500`),
+    // The link is shown to users and opened in a new tab, so only https is allowed (no javascript: links).
+    check('listings_url_https', sql`${t.url} like 'https://%'`),
+    uniqueIndex('listings_board_external_unique').on(t.board_id, t.external_id),
+    // Discover lists open listings newest first.
+    index('listings_open_newest_idx').on(t.closed_at, t.posted_at),
+  ],
+);
