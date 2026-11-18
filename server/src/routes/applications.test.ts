@@ -1,21 +1,8 @@
-import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
-
-// Fake Clerk: the x-test-user header decides who is "logged in", so no real sign-in is needed
-vi.mock('@clerk/express', () => ({
-  clerkMiddleware: () => (_req: unknown, _res: unknown, next: () => void) => next(),
-  getAuth: (req: { headers: Record<string, string | undefined> }) => {
-    const userId = req.headers['x-test-user'];
-    return { userId, isAuthenticated: Boolean(userId) };
-  },
-}));
-
 import app from '../app';
 import { pool } from '../db';
-
-//add a header to a request "send this request with the label of user_a/b attached"
-const asA = (r: request.Test) => r.set('x-test-user', 'user_A');
-const asB = (r: request.Test) => r.set('x-test-user', 'user_B');
+import { asA, asB } from '../testing/helpers';
 
 let companyA: { id: number };
 let appA: { id: number };
@@ -28,23 +15,9 @@ async function createCompanyAndApp(as: typeof asA, name: string) {
   return { company, application };
 }
 
-//the "reset" before and after the tests.
-//Before every test it resets the test database to a clean, known state
-//before each: run this code before every single it(..) in this file
+//the shared setup (testing/setup.ts) already empties the database before each test
 beforeEach(async () => {
-  // Safety net: these tests wipe every table, so refuse to run against anything but the test DB
-  const { rows } = await pool.query('SELECT current_database() AS db');
-  if (!rows[0].db.endsWith('_test')) throw new Error(`Refusing to wipe database "${rows[0].db}"`);
-
-  await pool.query('TRUNCATE companies, applications, contacts, interview_stages, resumes RESTART IDENTITY CASCADE');
-  //resets spies
-  vi.clearAllMocks();
   ({ company: companyA, application: appA } = await createCompanyAndApp(asA, 'Acme'));
-});
-
-//After all tests are finished close the database connection. 
-afterAll(async () => {
-  await pool.end();
 });
 
 //Test 1: no user at all

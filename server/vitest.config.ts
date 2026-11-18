@@ -9,6 +9,7 @@ export default defineConfig({
     // TZ is set to a non-UTC zone on purpose so time-zone bugs show up in tests
     env: { DATABASE_URL: 'postgresql://localhost:5432/jobtracker_test', ENV_FILE: '/dev/null', TZ: 'America/New_York' },
     globalSetup: './test/globalSetup.ts',
+    setupFiles: ['./src/testing/setup.ts'],
     fileParallelism: false,
   },
 });
