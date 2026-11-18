@@ -12,9 +12,6 @@ vi.mock('./useError', () => {
 // the sections fetch their own data; they are not what is being tested here
 vi.mock('./InterviewStages', () => ({ default: () => null }));
 vi.mock('./ApplicationContacts', () => ({ default: () => null }));
-vi.mock('./JobPostings', () => ({ default: () => null }));
-vi.mock('./Matches', () => ({ default: () => null }));
-vi.mock('./Suggestions', () => ({ default: () => null }));
 
 import ApplicationDetail from './ApplicationDetail';
 

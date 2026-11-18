@@ -52,38 +52,8 @@ CREATE TABLE resumes (
   resume_text TEXT
 );
 
-CREATE TABLE job_postings(
-  id SERIAL PRIMARY KEY,
-  application_id INTEGER NOT NULL UNIQUE REFERENCES
-  applications(id) ON DELETE CASCADE,
-  raw_text TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW(),
-  parsed_data JSONB
-);
-
-CREATE TABLE matches (
-  id SERIAL PRIMARY KEY,
-  application_id INTEGER NOT NULL REFERENCES
-  applications(id) ON DELETE CASCADE,
-  score REAL NOT NULL,
-  matched_skills TEXT[] NOT NULL,
-  missing_skills TEXT[] NOT NULL,
-  resume_text_snapshot TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE suggestions(
-  id SERIAL PRIMARY KEY,
-  application_id INTEGER NOT NULL UNIQUE REFERENCES
-  applications(id) ON DELETE CASCADE,
-  suggested_changes JSONB NOT NULL,
-  cover_letter_draft TEXT NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
 -- Postgres does not index foreign keys automatically; the ownership-check joins use these
 CREATE INDEX companies_user_id_idx ON companies(user_id);
 CREATE INDEX applications_company_id_idx ON applications(company_id);
 CREATE INDEX contacts_company_id_idx ON contacts(company_id);
 CREATE INDEX interview_stages_application_id_idx ON interview_stages(application_id);
-CREATE INDEX matches_application_id_idx ON matches(application_id);

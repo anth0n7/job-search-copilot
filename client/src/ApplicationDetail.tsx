@@ -5,9 +5,6 @@ import { useApi } from './useApi'
 import { useError } from './useError'
 import InterviewStages from './InterviewStages'
 import ApplicationContacts from './ApplicationContacts'
-import JobPostings from './JobPostings'
-import Matches from './Matches'
-import Suggestions from './Suggestions'
 import StatusBadge  from './StatusBadge';
 import { formatDate } from './dateUtils';
 import { normalizeWebsite } from './urlUtils';
@@ -78,18 +75,6 @@ function ApplicationDetail({companies}: ApplicationDetailsProp){
 
                     <div className="mt-6 divider pt-4">
                         <InterviewStages applicationID={application.id} />
-                    </div>
-
-                    <div>
-                        <JobPostings applicationID={application.id} />
-                    </div>
-
-                    <div>
-                        <Matches applicationID={application.id} />
-                    </div>
-
-                    <div>
-                        <Suggestions applicationID={application.id} />
                     </div>
 
                 </div>

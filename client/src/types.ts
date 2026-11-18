@@ -36,48 +36,9 @@ export interface InterviewStage {
     notes: string | null;
 }
 
-export interface ParsedJobPostingData {
-    seniority: string;
-    required_skills: string[];
-    responsibilities: string[];
-}
-
-export interface JobPosting {
-    id: number;
-    application_id: number;
-    raw_text: string;
-    created_at: string;
-    parsed_data: ParsedJobPostingData | null;
-}
-
-export interface Match{
-    id: number;
-    application_id: number;
-    score: number;
-    matched_skills: string[];
-    missing_skills: string[];
-    resume_text_snapshot: string;
-    created_at: string;
-}
-
 export interface Resume{
     id: number;
     user_id: string;
     updated_at: string;
     resume_text: string | null;
-}
-
-
-export interface SuggestedChange{
-    original: string;
-    suggested: string;
-    reason: string;
-}
-
-export interface Suggestion{
-    id: number;
-    application_id: number;
-    suggested_changes: SuggestedChange [];
-    cover_letter_draft: string;
-    updated_at: string;
 }

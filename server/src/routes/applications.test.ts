@@ -10,25 +10,8 @@ vi.mock('@clerk/express', () => ({
   },
 }));
 
-// Fake the paid APIs so tests are fast, free and deterministic
-//Tests your logic not the AI itself
-vi.mock('../parseJobPosting', () => ({
-  parseJobPosting: vi.fn(async () => ({
-    seniority: 'mid',
-    required_skills: ['TypeScript', 'SQL'],
-    responsibilities: ['Build things'],
-  })),
-}));
-vi.mock('../compareSkills', () => ({
-  compareSkills: vi.fn(async () => ({ matched_skills: ['TypeScript'], missing_skills: ['SQL'] })),
-}));
-vi.mock('../getEmbedding', () => ({
-  getEmbedding: vi.fn(async () => [1, 0, 0]),
-}));
-
 import app from '../app';
 import { pool } from '../db';
-import { compareSkills } from '../compareSkills';
 
 //add a header to a request "send this request with the label of user_a/b attached"
 const asA = (r: request.Test) => r.set('x-test-user', 'user_A');
@@ -53,7 +36,7 @@ beforeEach(async () => {
   const { rows } = await pool.query('SELECT current_database() AS db');
   if (!rows[0].db.endsWith('_test')) throw new Error(`Refusing to wipe database "${rows[0].db}"`);
 
-  await pool.query('TRUNCATE companies, applications, contacts, interview_stages, resumes, job_postings, matches, suggestions RESTART IDENTITY CASCADE');
+  await pool.query('TRUNCATE companies, applications, contacts, interview_stages, resumes RESTART IDENTITY CASCADE');
   //resets spies
   vi.clearAllMocks();
   ({ company: companyA, application: appA } = await createCompanyAndApp(asA, 'Acme'));
@@ -68,7 +51,7 @@ afterAll(async () => {
 describe('authentication', () => {
   it('rejects requests with no user', async () => {
     await request(app).get('/applications').expect(401);
-    await request(app).get(`/applications/${appA.id}/job_postings`).expect(401);
+    await request(app).get(`/applications/${appA.id}/interview_stages`).expect(401);
   });
 });
 
@@ -130,7 +113,7 @@ describe('database rules', () => {
   it('has indexes on the foreign-key columns', async () => {
     const { rows } = await pool.query("SELECT indexname FROM pg_indexes WHERE schemaname = 'public'");
     const names = rows.map((r: { indexname: string }) => r.indexname);
-    for (const wanted of ['companies_user_id_idx', 'applications_company_id_idx', 'contacts_company_id_idx', 'interview_stages_application_id_idx', 'matches_application_id_idx']) {
+    for (const wanted of ['companies_user_id_idx', 'applications_company_id_idx', 'contacts_company_id_idx', 'interview_stages_application_id_idx']) {
       expect(names).toContain(wanted);
     }
   });
@@ -209,116 +192,9 @@ describe('application ownership', () => {
       .send({ company_id: companyA.id, role_title: 'Engineer', status: 'saved' }).expect(404);
   });
 
-  it("blocks another user from every sub-resource of the application", async () => {
-    await asA(request(app).put(`/applications/${appA.id}/job_postings`)).send({ raw_text: 'secret posting' });
-
-    await asB(request(app).put(`/applications/${appA.id}/job_postings`)).send({ raw_text: 'overwrite' }).expect(404);
-    await asB(request(app).post(`/applications/${appA.id}/job_postings/parse`)).expect(404);
-    await asB(request(app).post(`/applications/${appA.id}/matches`)).expect(404);
-    await asB(request(app).post(`/applications/${appA.id}/suggestions/generate`)).expect(404);
-
-    // reads don't error, they just return nothing
-    expect((await asB(request(app).get(`/applications/${appA.id}/job_postings`)).expect(200)).body).toBeNull();
-    expect((await asB(request(app).get(`/applications/${appA.id}/matches`)).expect(200)).body).toEqual([]);
-    expect((await asB(request(app).get(`/applications/${appA.id}/suggestions`)).expect(200)).body).toBeNull();
+  it("hides another user's interview stages", async () => {
+    await asA(request(app).post('/interview_stages')).send({ application_id: appA.id, stage_name: 'Phone' }).expect(200);
+    // a read of someone else's application returns nothing instead of an error
     expect((await asB(request(app).get(`/applications/${appA.id}/interview_stages`)).expect(200)).body).toEqual([]);
-
-    // and A's posting is untouched
-    const posting = await asA(request(app).get(`/applications/${appA.id}/job_postings`)).expect(200);
-    expect(posting.body.raw_text).toBe('secret posting');
   });
 });
-
-describe('job posting parsed_data', () => {
-  const savePosting = (text: string) =>
-    asA(request(app).put(`/applications/${appA.id}/job_postings`)).send({ raw_text: text }).expect(200);
-  const parsePosting = () => asA(request(app).post(`/applications/${appA.id}/job_postings/parse`)).expect(200);
-
-  it('stores parsed data after parsing', async () => {
-    await savePosting('We need a TypeScript dev');
-    const parsed = await parsePosting();
-    expect(parsed.body.parsed_data.required_skills).toEqual(['TypeScript', 'SQL']);
-  });
-
-  it('keeps parsed data when the same text is saved again', async () => {
-    await savePosting('We need a TypeScript dev');
-    await parsePosting();
-    const resaved = await savePosting('We need a TypeScript dev');
-    expect(resaved.body.parsed_data).not.toBeNull();
-  });
-
-  it('clears parsed data when the text changes', async () => {
-    await savePosting('We need a TypeScript dev');
-    await parsePosting();
-    const edited = await savePosting('Actually we need a Go dev');
-    expect(edited.body.raw_text).toBe('Actually we need a Go dev');
-    expect(edited.body.parsed_data).toBeNull();
-  });
-
-  it('cannot parse before a posting has been saved', async () => {
-    await asA(request(app).post(`/applications/${appA.id}/job_postings/parse`)).expect(400);
-  });
-});
-
-describe('running a match', () => {
-  const saveResume = () => asA(request(app).put('/resumes')).send({ resume_text: 'I know TypeScript' }).expect(200);
-  const savePosting = (text: string) =>
-    asA(request(app).put(`/applications/${appA.id}/job_postings`)).send({ raw_text: text }).expect(200);
-  const runMatch = () => asA(request(app).post(`/applications/${appA.id}/matches`));
-
-  it('requires a resume', async () => {
-    await savePosting('posting');
-    const res = await runMatch().expect(400);
-    expect(res.body.error).toMatch(/resume/i);
-  });
-
-  it('requires a saved posting', async () => {
-    await saveResume();
-    const res = await runMatch().expect(400);
-    expect(res.body.error).toMatch(/job posting/i);
-  });
-
-  it('requires the posting to be parsed, and does not call the AI when it is not', async () => {
-    await saveResume();
-    await savePosting('posting');
-    const res = await runMatch().expect(400);
-    expect(res.body.error).toMatch(/parse/i);
-    expect(compareSkills).not.toHaveBeenCalled();
-  });
-
-  it('saves the score, skills and a snapshot of the resume', async () => {
-    await saveResume();
-    await savePosting('posting');
-    await asA(request(app).post(`/applications/${appA.id}/job_postings/parse`)).expect(200);
-
-    const res = await runMatch().expect(200);
-    expect(res.body.score).toBeCloseTo(1); // both embeddings are identical in the mock
-    expect(res.body.matched_skills).toEqual(['TypeScript']);
-    expect(res.body.missing_skills).toEqual(['SQL']);
-    expect(res.body.resume_text_snapshot).toBe('I know TypeScript');
-    expect(compareSkills).toHaveBeenCalledWith('I know TypeScript', ['TypeScript', 'SQL']);
-  });
-
-  it('keeps every match as history, newest first', async () => {
-    await saveResume();
-    await savePosting('posting');
-    await asA(request(app).post(`/applications/${appA.id}/job_postings/parse`)).expect(200);
-
-    const first = await runMatch().expect(200);
-    const second = await runMatch().expect(200);
-    const history = await asA(request(app).get(`/applications/${appA.id}/matches`)).expect(200);
-    expect(history.body.map((m: { id: number }) => m.id)).toEqual([second.body.id, first.body.id]);
-  });
-
-  it('requires re-parsing after the posting is edited', async () => {
-    await saveResume();
-    await savePosting('posting');
-    await asA(request(app).post(`/applications/${appA.id}/job_postings/parse`)).expect(200);
-    await runMatch().expect(200);
-
-    await savePosting('edited posting');
-    await runMatch().expect(400);
-  });
-});
-
-

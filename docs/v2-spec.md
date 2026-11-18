@@ -168,7 +168,7 @@ Seven fix tickets for code v2 keeps: error handling, server reliability and CORS
 16. Add company by name or careers link (SSRF-safe).
 17. Delete my data.
 18. Add application manually (kept small).
-19. Remove v1 matches and skills code.
+19. Remove v1 matches and skills code. **Done first on `v2`** (before the Drizzle baseline), so the baseline contains only the 5 tables v2 keeps.
 20. Later: suggest companies from Adzuna listings (after testing the redirect).
 
 ## 12. Unverified assumptions (test before relying on them)

@@ -1,13 +1,13 @@
 # Job Search Copilot
 
-Full-stack job-application tracker with AI features: Claude parses job postings, Voyage AI embeddings + cosine similarity score resume/posting fit, and Claude suggests resume rewrites and a cover letter. See [README.md](README.md) for the product description and design rationale.
+Full-stack job-application tracker. **This is the `v2` branch**: v1's AI features (Claude job-posting parsing, Voyage embeddings + cosine similarity scoring, resume suggestions and cover letter) were removed on purpose and are being replaced by job discovery, hybrid scoring and tailoring. The plan is in [docs/v2-spec.md](docs/v2-spec.md). [README.md](README.md) still describes v1 (the `main` branch) until v2 ships.
 
 ## Layout
 
 Two independent npm projects (there is no root `package.json`):
 
 - `client/` – React 19 + TypeScript + Vite + Tailwind 4 + React Router + Clerk. Flat `src/` (one component per file, no subfolders).
-- `server/` – Express 5 + TypeScript (run with `tsx`, no build step) + `pg` + Clerk + Anthropic SDK.
+- `server/` – Express 5 + TypeScript (run with `tsx`, no build step) + `pg` + Clerk. The Anthropic SDK is installed but unused until the v2 Claude wrapper is built.
 - `server/schema.sql` – the whole schema. Starts with `DROP TABLE ... CASCADE`, so **never run it against a database that has data you want to keep**. There are no migrations; schema changes are hand-written `ALTER`s plus an update to `schema.sql`.
 
 ## Commands
@@ -31,30 +31,26 @@ Environment files:
 - Server secrets live **outside the repo** in `~/.config/job-search-copilot/server.env` (override the path with `ENV_FILE`; loaded in `src/db.ts`): `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`. Do not read it or put keys back in the project folder; `.claude/settings.json` denies reads of `.env*` files and that directory.
 - `client/.env` (gitignored; public values only): `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_URL` (defaults to `http://localhost:3001`)
 
-Local DB is Postgres, database `jobtracker`. Server tests: `cd server && npm test` (Vitest + Supertest against a separate `jobtracker_test` database built from `schema.sql`, Clerk/AI mocked; they currently cover applications and job postings plus the phase 0 fixes: errors, dates, database rules, required fields, CORS). Client tests: `cd client && npm test` (Vitest + Testing Library, with `useApi`/`useError`/Clerk mocked). CI is configured in `.github/workflows/ci.yml` but has not run yet (the repo has not been pushed since it was added).
+Local DB is Postgres, database `jobtracker`. Server tests: `cd server && npm test` (Vitest + Supertest against a separate `jobtracker_test` database built from `schema.sql`, Clerk/AI mocked; they currently cover applications and job postings plus the phase 0 fixes: errors, dates, database rules, required fields, CORS). Client tests: `cd client && npm test` (Vitest + Testing Library, with `useApi`/`useError`/Clerk mocked). CI (`.github/workflows/ci.yml`) runs on every push; its first run on `v2` passed.
 
 ## Server architecture
 
-- `src/app.ts` builds the Express app (exported so tests can import it) and `src/index.ts` only calls `listen`. `app.ts` mounts routers: `/companies`, `/applications`, `/contacts`, `/interview_stages`, `/resumes`. `dotenv.config()` happens in `src/db.ts`, and the Anthropic clients read `process.env` at import time, so `db` must be imported before the AI modules.
+- `src/app.ts` builds the Express app (exported so tests can import it) and `src/index.ts` only calls `listen`. `app.ts` mounts routers: `/companies`, `/applications`, `/contacts`, `/interview_stages`, `/resumes`. `dotenv.config()` happens in `src/db.ts`, and `app.ts` imports `./db` first (as a side-effect import) so the secrets are loaded before any module that reads `process.env` at import time (the future AI modules will).
 - Every route uses `requireAuth` ([middleware.ts](server/src/middleware.ts)) and reads the user with `getAuth(req).userId`.
-- `src/routes/applications.ts` is the big one: CRUD plus `/:id/job_postings` (PUT upsert, `/parse` POST, GET), `/:id/matches` (GET, POST), `/:id/suggestions` (GET, `/generate` POST).
-- AI helpers: `parseJobPosting.ts`, `compareSkills.ts`, `generateSuggestions.ts` (Claude Haiku; each strips markdown fences then `JSON.parse`s), `getEmbedding.ts` (Voyage `voyage-4-lite` via `fetch`), `similarity.ts` (hand-written cosine similarity; no pgvector on purpose).
+- `src/routes/applications.ts`: CRUD plus `/:id/interview_stages`. The v1 job-posting, match and suggestion routes and the AI helper files were deleted (spec ticket 19); their database tables were removed from `schema.sql`.
 
 ### Conventions that matter
 
-- **Ownership is checked in SQL, per route.** Only `companies` and `resumes` have a `user_id` column. Applications, contacts, interview stages, job postings, matches and suggestions are scoped by joining back to `companies.user_id` (e.g. `applications JOIN companies ON applications.company_id = companies.id WHERE ... companies.user_id = $N`). When writing a route that touches child data, always include that join. Return 404 (not 403) for "exists but not yours".
+- **Ownership is checked in SQL, per route.** Only `companies` and `resumes` have a `user_id` column. Applications, contacts and interview stages are scoped by joining back to `companies.user_id` (e.g. `applications JOIN companies ON applications.company_id = companies.id WHERE ... companies.user_id = $N`). When writing a route that touches child data, always include that join. Return 404 (not 403) for "exists but not yours".
 - **Reassignment must be re-authorized.** On PUT/POST that accept `company_id` or `application_id`, verify the *new* parent also belongs to the user (past security bug).
 - Queries are parameterized (`$1, $2`); keep it that way. In a route's catch block call `sendServerError(res, err)` ([errors.ts](server/src/errors.ts)): it logs the real error and sends a generic 500 message (never `String(err)`; database error text must not reach the browser). FK violations (`err.code === '23503'`) map to 400 in the route, and CHECK violations (`23514`) map to 400 inside `sendServerError`. Blank required fields are rejected with 400 using `isBlank` from the same file. Errors thrown by `express.json()` (too large, bad JSON) are turned into JSON replies by the error handler at the end of `app.ts`.
-- `job_postings.parsed_data` is derived from `raw_text`. The PUT upsert clears it (`NULL`) when the text changes, and `POST /matches` returns 400 if it is missing. Keep these two in sync if you touch either.
-- `parsed_data` and `suggested_changes` are JSONB: write them with `JSON.stringify(...)`. Skill lists are `TEXT[]` and are passed as plain arrays.
-- Matches are append-only history (each stores `resume_text_snapshot`); suggestions and job postings are one row per application (`UNIQUE application_id`, upsert).
 - Server uses extensionless relative imports (`'../db'`) via `moduleResolution: bundler`; `tsconfig` is strict with `noUncheckedIndexedAccess`.
 
 ## Client architecture
 
 - `main.tsx` wraps `ClerkProvider > BrowserRouter > ErrorProvider > App`.
 - `App.tsx` owns the `companies` and `applications` lists (lifted state) and the routes: `/companies`, `/applications`, `/applications/:id` (`ApplicationDetail`), `/resumes`; `/` redirects to `/applications`.
-- `ApplicationDetail` composes section components: `ApplicationContacts`, `InterviewStages`, `JobPostings`, `Matches`, `Suggestions`. Each section fetches its own data from `/applications/:id/...`.
+- `ApplicationDetail` composes section components: `ApplicationContacts` and `InterviewStages`. Each section fetches its own data.
 - All API calls go through `useApi()` ([useApi.ts](client/src/useApi.ts)), which attaches the Clerk bearer token and throws an `Error` with a readable message on non-2xx (the server's `error` field, or "Request too large" / "Request failed (status)" / "Can't reach the server" when the reply isn't JSON). It returns one stable function (`useCallback`), so effects can list `apiFetch` and `setErrorMessage` as dependencies. Callers `.catch` and call `setErrorMessage(err.message)` from `useError()`, which feeds the global `ErrorBanner`.
 - Types for API payloads live in [types.ts](client/src/types.ts) and mirror the DB columns (snake_case).
 - Styling: Tailwind utility classes plus shared component classes defined in `index.css` (`card`, `divider`, `input-field`, `form-label`, `btn-primary`, `btn-secondary`, `btn-danger`, `btn-ghost`, `skeleton`). Reuse these rather than re-spelling the utilities. Dark slate/sky theme. Icons from `lucide-react`.
@@ -65,11 +61,9 @@ Local DB is Postgres, database `jobtracker`. Server tests: `cd server && npm tes
 
 Phase 0 fixed the signed-out `Bearer null` requests, the raw database errors sent to the browser, the form/date/time bugs and the lint warnings. Still open:
 
-- AI responses are parsed with fence-stripping + `JSON.parse` with no shape validation or `stop_reason` check, and `parseJobPosting.ts` has a malformed key in its prompt example. (Replaced by a validated Claude wrapper in v2.)
-- Nothing limits how often or how much the paid AI routes can be called; the "Run Match" and "Parse" buttons have no loading state, so a double-click means two paid calls. (v2: per-user limits and a monthly spending cap.)
+- The v1 AI features are gone, so the AI-related problems found earlier (unvalidated Claude replies, no spending limits, no loading state on the paid buttons, no prompt-injection defenses) are now **requirements for the v2 AI tickets** in `docs/v2-spec.md`, not bugs in this code.
 - Input validation is limited to blank-name checks; there is no schema-based validation of request bodies.
 - The ownership-check SQL is duplicated ~15 times across route files, and some `UPDATE`/`DELETE` statements rely on a separate check just before them instead of checking ownership themselves.
-- Job-posting text goes straight into Claude prompts with no prompt-injection defenses (v2 requirement, see `docs/v2-spec.md`).
 - `npm audit` reports vulnerable dependencies (see the dependency ticket in the spec).
 
 ## Working style for this repo
