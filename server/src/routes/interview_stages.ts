@@ -86,7 +86,7 @@ router.put('/:id', requireAuth, async (req, res) =>{
     }
 
     const result = await pool.query('UPDATE interview_stages SET application_id = $1, stage_name = $2, scheduled_date = $3, completed = $4, notes = $5 WHERE id = $6 RETURNING *',
-      [application_id, stage_name, scheduled_date, completed, notes, interviewStagesId]  
+      [application_id, stage_name, scheduled_date, completed ?? false, notes, interviewStagesId]  
     );
     if(result.rows.length === 0){
       return res.status(404).json({error: 'Interview stage not found'});

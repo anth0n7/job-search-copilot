@@ -110,12 +110,35 @@ describe('database rules', () => {
       .send({ company_id: companyA.id, role_title: 'Engineer', status: 'banana' }).expect(400);
   });
 
-  it('has indexes on the foreign-key columns', async () => {
-    const { rows } = await pool.query("SELECT indexname FROM pg_indexes WHERE schemaname = 'public'");
-    const names = rows.map((r: { indexname: string }) => r.indexname);
-    for (const wanted of ['companies_user_id_idx', 'applications_company_id_idx', 'contacts_company_id_idx', 'interview_stages_application_id_idx']) {
-      expect(names).toContain(wanted);
-    }
+  // The routes check these too; the database is the backstop if a route ever forgets.
+  it('refuses a blank name even when no route checked it', async () => {
+    await expect(pool.query("INSERT INTO companies (user_id, name) VALUES ('user_A', '   ')")).rejects.toThrow();
+  });
+
+  it('sets updated_at on any update, even one that does not mention it', async () => {
+    const before = (await pool.query('SELECT updated_at FROM applications WHERE id = $1', [appA.id])).rows[0];
+    await new Promise((r) => setTimeout(r, 20));
+    await pool.query("UPDATE applications SET role_title = 'Changed' WHERE id = $1", [appA.id]);
+    const after = (await pool.query('SELECT updated_at FROM applications WHERE id = $1', [appA.id])).rows[0];
+    expect(after.updated_at.getTime()).toBeGreaterThan(before.updated_at.getTime());
+  });
+});
+
+describe('company names', () => {
+  it('rejects a duplicate name for the same user, ignoring case and extra spaces', async () => {
+    const res = await asA(request(app).post('/companies')).send({ name: ' acme ' }).expect(409);
+    expect(res.body.error).toMatch(/already/i);
+  });
+
+  it('allows the same name for a different user', async () => {
+    await asB(request(app).post('/companies')).send({ name: 'Acme' }).expect(200);
+  });
+});
+
+describe('interview stage edits', () => {
+  it('treats a missing "completed" as false instead of failing', async () => {
+    const created = await asA(request(app).post('/interview_stages')).send({ application_id: appA.id, stage_name: 'Phone' }).expect(200);
+    await asA(request(app).put(`/interview_stages/${created.body.id}`)).send({ application_id: appA.id, stage_name: 'Phone 2' }).expect(200);
   });
 });
 

@@ -8,7 +8,7 @@ Two independent npm projects (there is no root `package.json`):
 
 - `client/` – React 19 + TypeScript + Vite + Tailwind 4 + React Router + Clerk. Flat `src/` (one component per file, no subfolders).
 - `server/` – Express 5 + TypeScript (run with `tsx`, no build step) + `pg` + Clerk. The Anthropic SDK is installed but unused until the v2 Claude wrapper is built.
-- `server/schema.sql` – the whole schema. Starts with `DROP TABLE ... CASCADE`, so **never run it against a database that has data you want to keep**. There are no migrations; schema changes are hand-written `ALTER`s plus an update to `schema.sql`.
+- `server/src/schema.ts` – the whole schema, written with Drizzle (tables, constraints, indexes). `server/drizzle/` holds the numbered SQL migrations generated from it (plus hand-written ones, e.g. the `updated_at` trigger). Workflow: edit `schema.ts`, run `npm run db:generate`, **read the generated SQL** (it must not contain `DROP` unless intended), commit both, then apply with `npm run db:migrate`. Never edit a migration that has already been applied, and never use `drizzle-kit push` (it changes a database without reviewed SQL). CI fails if `schema.ts` and the migrations disagree.
 
 ## Commands
 
@@ -17,6 +17,8 @@ Two independent npm projects (there is no root `package.json`):
 cd server && npm install && npm run dev      # tsx watch
 cd server && npm run typecheck               # tsc --noEmit
 cd server && npm run lint                    # oxlint, type-aware
+cd server && npm run db:generate             # write a migration from schema.ts changes (never connects)
+cd server && npm run db:migrate              # apply pending migrations to DATABASE_URL (prints the database name first)
 
 # client (http://localhost:5173)
 cd client && npm install && npm run dev
@@ -31,13 +33,13 @@ Environment files:
 - Server secrets live **outside the repo** in `~/.config/job-search-copilot/server.env` (override the path with `ENV_FILE`; loaded in `src/db.ts`): `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`. Do not read it or put keys back in the project folder; `.claude/settings.json` denies reads of `.env*` files and that directory.
 - `client/.env` (gitignored; public values only): `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_URL` (defaults to `http://localhost:3001`)
 
-Local DB is Postgres, database `jobtracker`. Server tests: `cd server && npm test` (Vitest + Supertest against a separate `jobtracker_test` database built from `schema.sql`, Clerk/AI mocked; they currently cover applications and job postings plus the phase 0 fixes: errors, dates, database rules, required fields, CORS). Client tests: `cd client && npm test` (Vitest + Testing Library, with `useApi`/`useError`/Clerk mocked). CI (`.github/workflows/ci.yml`) runs on every push; its first run on `v2` passed.
+Local DB is Postgres, database `jobtracker`. Server tests: `cd server && npm test` (Vitest + Supertest against a separate `jobtracker_test` database rebuilt from the migrations in `server/drizzle/` before every run, Clerk/AI mocked; they currently cover applications and job postings plus the phase 0 fixes: errors, dates, database rules, required fields, CORS). Client tests: `cd client && npm test` (Vitest + Testing Library, with `useApi`/`useError`/Clerk mocked). CI (`.github/workflows/ci.yml`) runs on every push; its first run on `v2` passed.
 
 ## Server architecture
 
 - `src/app.ts` builds the Express app (exported so tests can import it) and `src/index.ts` only calls `listen`. `app.ts` mounts routers: `/companies`, `/applications`, `/contacts`, `/interview_stages`, `/resumes`. `dotenv.config()` happens in `src/db.ts`, and `app.ts` imports `./db` first (as a side-effect import) so the secrets are loaded before any module that reads `process.env` at import time (the future AI modules will).
 - Every route uses `requireAuth` ([middleware.ts](server/src/middleware.ts)) and reads the user with `getAuth(req).userId`.
-- `src/routes/applications.ts`: CRUD plus `/:id/interview_stages`. The v1 job-posting, match and suggestion routes and the AI helper files were deleted (spec ticket 19); their database tables were removed from `schema.sql`.
+- `src/routes/applications.ts`: CRUD plus `/:id/interview_stages`. The v1 job-posting, match and suggestion routes and the AI helper files were deleted (spec ticket 19); their database tables were removed from the schema.
 
 ### Conventions that matter
 
@@ -69,7 +71,7 @@ Phase 0 fixed the signed-out `Bearer null` requests, the raw database errors sen
 ## Working style for this repo
 
 - Match the surrounding code. The existing code is hand-written with explanatory comments aimed at a learner; for new comments follow the Comments section below (explain why, not what, and keep them concise).
-- Do not run `server/schema.sql` against the local DB without asking; it deletes existing data.
+- Do not run `npm run db:migrate` against any database other than a local development one without asking, and always check the database name it prints. Migrations that drop or rewrite data need explicit approval.
 - Do not commit `.env` files (they are gitignored).
 - **After every change, justify it and list what to review by eye.** When you finish a change, explain your reasoning (what you changed, why, and what you considered and rejected). Then list the specific code the owner should read for themselves, with file and line links: anything touching authentication, ownership checks, secrets, CORS, error messages and logs, spending limits, user data or deletion, URL fetching, or the schema. For each item say what to look for and what could go wrong. "Check by hand" means sensitive or correctness-critical code, not just features worth clicking through. Also state anything you could not verify or that tests don't cover.
 

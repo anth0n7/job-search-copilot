@@ -48,6 +48,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      # fails if schema.ts was changed without generating a migration: generate writes a new file when they differ
+      - run: npm run db:generate
+      - run: test -z "$(git status --porcelain)"
       - run: npm test
 
   client:

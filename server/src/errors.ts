@@ -7,6 +7,10 @@ export function sendServerError(res: Response, err: unknown) {
   if ((err as { code?: string })?.code === '23514') {
     return res.status(400).json({ error: 'Invalid value' });
   }
+  //23505 = a unique rule was broken (e.g. a company with the same name already exists)
+  if ((err as { code?: string })?.code === '23505') {
+    return res.status(409).json({ error: 'That already exists' });
+  }
   console.error(err);
   res.status(500).json({ error: 'Something went wrong on the server.' });
 }

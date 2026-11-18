@@ -1,4 +1,6 @@
 import { Pool, types } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import * as schema from './schema';
 import dotenv from 'dotenv';
 import os from 'node:os';
 import path from 'node:path';
@@ -22,3 +24,6 @@ process.env.DATABASE_URL,
 pool.on('error', (err) => {
     console.error('Unexpected database pool error', err);
 });
+
+//Typed query builder over the same pool. The schema argument is what gives queries their types.
+export const db = drizzle(pool, { schema });
