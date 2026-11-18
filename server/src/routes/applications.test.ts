@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import app from '../app';
 import { pool } from '../db';
@@ -15,6 +15,8 @@ async function createCompanyAndApp(as: typeof asA, name: string) {
   return { company, application };
 }
 
+afterEach(() => vi.restoreAllMocks());
+
 //the shared setup (testing/setup.ts) already empties the database before each test
 beforeEach(async () => {
   ({ company: companyA, application: appA } = await createCompanyAndApp(asA, 'Acme'));
@@ -30,9 +32,12 @@ describe('authentication', () => {
 
 describe('error responses', () => {
   it('hides database error details on a 500', async () => {
-    // "abc" is not a valid integer id, so Postgres throws
-    const res = await asA(request(app).get('/applications/abc')).expect(500);
+    // make the next database call fail with a message that must never reach the browser
+    vi.spyOn(pool, 'query').mockRejectedValueOnce(new Error('relation "secret_table" does not exist'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await asA(request(app).get('/applications')).expect(500);
     expect(res.body.error).toBe('Something went wrong on the server.');
+    expect(JSON.stringify(res.body)).not.toContain('secret_table');
   });
 
   it('returns JSON (not HTML) when the request body is too large', async () => {
@@ -192,5 +197,25 @@ describe('application ownership', () => {
     await asA(request(app).post('/interview_stages')).send({ application_id: appA.id, stage_name: 'Phone' }).expect(200);
     // a read of someone else's application returns nothing instead of an error
     expect((await asB(request(app).get(`/applications/${appA.id}/interview_stages`)).expect(200)).body).toEqual([]);
+  });
+});
+
+describe('application input', () => {
+  it('answers 404 (not a server error) for an id that is not a number', async () => {
+    await asA(request(app).get('/applications/abc')).expect(404);
+    await asA(request(app).put('/applications/abc')).send({ company_id: companyA.id, role_title: 'x', status: 'saved' }).expect(404);
+    await asA(request(app).delete('/applications/abc')).expect(404);
+  });
+
+  it('defaults the status to "saved" when none is sent', async () => {
+    const res = await asA(request(app).post('/applications')).send({ company_id: companyA.id, role_title: 'No status' }).expect(200);
+    expect(res.body.status).toBe('saved');
+  });
+
+  it('rejects an impossible application date and a missing company', async () => {
+    await asA(request(app).post('/applications')).send({ company_id: companyA.id, role_title: 'x', application_date: '2026-13-45' }).expect(400);
+    // Feb 30 would roll over to Mar 2 if it were only parsed, so it must be refused too
+    await asA(request(app).post('/applications')).send({ company_id: companyA.id, role_title: 'x', application_date: '2026-02-30' }).expect(400);
+    await asA(request(app).post('/applications')).send({ role_title: 'x' }).expect(400);
   });
 });

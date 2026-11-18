@@ -150,7 +150,7 @@ Seven fix tickets for code v2 keeps: error handling, server reliability and CORS
 
 ## 11. Proposed tickets (draft, in rough order)
 
-1. Create the `v2` branch; extract the repeated ownership-check SQL into one helper.
+1. Create the `v2` branch; extract the repeated ownership-check SQL into one helper. **Done**: `v2` exists, and ownership lives in `server/src/repositories/` (see `owned.ts`).
 2. Dependency vulnerabilities: `npm audit` (checked 2026-11-17) reports 8 findings in the server (production: `body-parser` high, `proxy-addr` critical, `qs` moderate) and 6 in the client (production: `picomatch` / `vite` high). Read each advisory, decide whether it is exploitable here, then update the package or document why not. Re-run the audit in CI.
 3. New schema for listings, profiles, scores and tailored copies; Neon and Vercel deployment.
 4. Board fetchers (Greenhouse, Lever, Ashby) and the curated company file.

@@ -38,14 +38,16 @@ Local DB is Postgres, database `jobtracker`. Server tests: `cd server && npm tes
 ## Server architecture
 
 - `src/app.ts` builds the Express app (exported so tests can import it) and `src/index.ts` only calls `listen`. `app.ts` mounts routers: `/companies`, `/applications`, `/contacts`, `/interview_stages`, `/resumes`. `dotenv.config()` happens in `src/db.ts`, and `app.ts` imports `./db` first (as a side-effect import) so the secrets are loaded before any module that reads `process.env` at import time (the future AI modules will).
-- Every route uses `requireAuth` ([middleware.ts](server/src/middleware.ts)) and reads the user with `getAuth(req).userId`.
+- Every route uses `requireAuth` ([middleware.ts](server/src/middleware.ts)) and reads the user with `getAuth(req).userId`. Routes only handle HTTP (read the request, check the input, call a repository, send the answer); all SQL lives in `src/repositories/` (Drizzle).
 - `src/routes/applications.ts`: CRUD plus `/:id/interview_stages`. The v1 job-posting, match and suggestion routes and the AI helper files were deleted (spec ticket 19); their database tables were removed from the schema.
 
 ### Conventions that matter
 
-- **Ownership is checked in SQL, per route.** Only `companies` and `resumes` have a `user_id` column. Applications, contacts and interview stages are scoped by joining back to `companies.user_id` (e.g. `applications JOIN companies ON applications.company_id = companies.id WHERE ... companies.user_id = $N`). When writing a route that touches child data, always include that join. Return 404 (not 403) for "exists but not yours".
-- **Reassignment must be re-authorized.** On PUT/POST that accept `company_id` or `application_id`, verify the *new* parent also belongs to the user (past security bug).
-- Queries are parameterized (`$1, $2`); keep it that way. In a route's catch block call `sendServerError(res, err)` ([errors.ts](server/src/errors.ts)): it logs the real error and sends a generic 500 message (never `String(err)`; database error text must not reach the browser). FK violations (`err.code === '23503'`) map to 400 in the route, and CHECK violations (`23514`) map to 400 inside `sendServerError`. Blank required fields are rejected with 400 using `isBlank` from the same file. Errors thrown by `express.json()` (too large, bad JSON) are turned into JSON replies by the error handler at the end of `app.ts`.
+- **Ownership is built into the repositories.** Only `companies` and `resumes` have a `user_id` column. Applications, contacts and interview stages belong to a user through a company (stages: application -> company). That chain is defined once in [repositories/owned.ts](server/src/repositories/owned.ts) (`ownedCompanyIds`, `ownedApplicationIds`, `ownsCompany`, `ownsApplication`), and every repository function takes the `userId` and puts it in the query itself, including `update` and `delete`. Never query a table from a route, and never add a repository function without the `userId` parameter. Return `null` (the route answers 404, not 403) for "not found" and "not yours" alike.
+- **Reassignment must be re-authorized.** Repository create/update functions that take a `company_id` or `application_id` call `ownsCompany` / `ownsApplication` on the NEW parent first (past security bug). Tests cover this for each route.
+- **Ids:** route ids go through `parseId` (a non-numeric id is a 404, never a database error); ids in a request body are checked with `isId`.
+- Schema property names are snake_case (`company_id`, `created_at`) so a database row is the API payload and the client's types mirror it; no mapping layer.
+- Queries go through Drizzle (parameterized); never build SQL by string concatenation. In a route's catch block call `sendServerError(res, err)` ([errors.ts](server/src/errors.ts)): it logs the real error and sends a generic 500 message (never `String(err)`; database error text must not reach the browser). FK violations (`errorCode(err) === '23503'`) map to 400 in the route, CHECK violations (`23514`) to 400 and unique violations (`23505`) to 409 inside `sendServerError`. Drizzle wraps database errors and puts the query values in its message, so read codes with `errorCode` and never log the wrapper (`sendServerError` already logs only the original error). Blank required fields are rejected with 400 using `isBlank` from the same file. Errors thrown by `express.json()` (too large, bad JSON) are turned into JSON replies by the error handler at the end of `app.ts`.
 - Server uses extensionless relative imports (`'../db'`) via `moduleResolution: bundler`; `tsconfig` is strict with `noUncheckedIndexedAccess`.
 
 ## Client architecture
@@ -65,7 +67,8 @@ Phase 0 fixed the signed-out `Bearer null` requests, the raw database errors sen
 
 - The v1 AI features are gone, so the AI-related problems found earlier (unvalidated Claude replies, no spending limits, no loading state on the paid buttons, no prompt-injection defenses) are now **requirements for the v2 AI tickets** in `docs/v2-spec.md`, not bugs in this code.
 - Input validation is limited to blank-name checks; there is no schema-based validation of request bodies.
-- The ownership-check SQL is duplicated ~15 times across route files, and some `UPDATE`/`DELETE` statements rely on a separate check just before them instead of checking ownership themselves.
+- Route input checks are hand-written per route (`readXInput` functions); there is no schema-based validation library yet (Zod is planned).
+- Routes use `getAuth(req).userId!` (trusting `requireAuth` ran first). A `currentUserId(req)` helper that throws when there is no user is proposed but not yet approved.
 - `npm audit` reports vulnerable dependencies (see the dependency ticket in the spec).
 
 ## Working style for this repo

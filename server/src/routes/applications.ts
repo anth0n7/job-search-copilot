@@ -1,140 +1,125 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware'
 import { getAuth } from '@clerk/express'
-import {pool} from '../db'
-import { sendServerError, isBlank } from '../errors'
+import { sendServerError, isBlank, errorCode } from '../errors'
+import { parseId, isId } from '../parseId'
+import { createApplication, deleteApplication, getApplication, listApplications, updateApplication } from '../repositories/applications'
+import type { ApplicationInput } from '../repositories/applications'
+import { listInterviewStagesByApplication } from '../repositories/interviewStages'
 
 const router = Router();
 
-//applications.* - give me every column, but only from applications (both talbes might have columns with the same name)
-router.get('/', requireAuth, async (req, res) =>{
+// A calendar date must be a real 'YYYY-MM-DD' (so '2026-13-45' is refused here, not by a database error)
+function isCalendarDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  // JavaScript rolls over some impossible dates (Feb 30 becomes Mar 2) and throws on others (month 13),
+  // so check the date is valid and reads back as the same text
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+// Reads and checks the request body. Returns the input, or the message to send back with a 400.
+function readApplicationInput(body: Record<string, unknown>): ApplicationInput | string {
+  const { company_id, role_title, job_posting_url, status, application_date } = body;
+  if (isBlank(role_title)) return 'Role title is required';
+  if (!isId(company_id)) return 'company_id must be a positive whole number';
+  if (application_date !== null && application_date !== undefined && (typeof application_date !== 'string' || !isCalendarDate(application_date))) {
+    return 'application_date must be a real date like 2026-11-09';
+  }
+  if (status !== undefined && typeof status !== 'string') return 'status must be text';
+  return {
+    company_id,
+    role_title: role_title as string,
+    job_posting_url: (job_posting_url as string | null | undefined) ?? null,
+    status: status as string | undefined,
+    application_date: (application_date as string | null | undefined) ?? null,
+  };
+}
+
+router.get('/', requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-  try{
-    const result = await pool.query('SELECT applications.* FROM applications JOIN companies ON applications.company_id = companies.id WHERE companies.user_id = $1 ORDER BY applications.id DESC',
-      [userId]
-    );
-    res.json(result.rows);
+  try {
+    res.json(await listApplications(userId!));
   } catch (err) {
     sendServerError(res, err);
   }
 });
 
-//first query to verify company id actually belongs to the user
-router.post('/', requireAuth, async (req, res) =>{
+router.post('/', requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-  try{
-    const {company_id, role_title, job_posting_url, status, application_date} = req.body;
-    if(isBlank(role_title)){
-      return res.status(400).json({error: 'Role title is required'});
+  try {
+    const input = readApplicationInput(req.body);
+    if (typeof input === 'string') {
+      return res.status(400).json({ error: input });
     }
-    const auth = await pool.query('SELECT * FROM companies WHERE user_id = $1 AND id = $2',
-      [userId, company_id]
-    );
-    if(auth.rows.length === 0){
-      return res.status(403).json({error: 'User not allowed access to company'});
+    const application = await createApplication(userId!, input);
+    if (!application) {
+      return res.status(403).json({ error: 'User not allowed access to company' });
     }
-    const result = await pool.query('INSERT INTO applications (company_id, role_title, job_posting_url, status, application_date) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [company_id, role_title, job_posting_url, status, application_date]  
-    );
-    res.json(result.rows[0]);
-  } catch (err: any) {
-    if(err.code === '23503'){
-      return res.status(400).json({error: 'That company does not exist'});
+    res.json(application);
+  } catch (err) {
+    if (errorCode(err) === '23503') {
+      return res.status(400).json({ error: 'That company does not exist' });
     }
     sendServerError(res, err);
   }
 });
 
 //404 is good here because it doesn't reveal "exists but not yours"
-router.get('/:id', requireAuth, async (req, res) =>{
+router.get('/:id', requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-  try{
-    const applicationID = req.params.id;
-    const result = await pool.query('SELECT applications.* FROM applications JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 and companies.user_id = $2',
-      [applicationID, userId]
-    );
-    if(result.rows.length === 0){
-      return res.status(404).json({error: 'application not found'});
+  try {
+    const id = parseId(req.params.id);
+    const application = id === null ? null : await getApplication(userId!, id);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
     }
-    res.json(result.rows[0]);
+    res.json(application);
   } catch (err) {
     sendServerError(res, err);
   }
 });
 
-router.put('/:id', requireAuth, async(req, res) =>{
+router.put('/:id', requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-  try{
-    const {company_id, role_title, job_posting_url, status, application_date} = req.body;
-    const applicationID = req.params.id;
-    if(isBlank(role_title)){
-      return res.status(400).json({error: 'Role title is required'});
+  try {
+    const input = readApplicationInput(req.body);
+    if (typeof input === 'string') {
+      return res.status(400).json({ error: input });
     }
-    
-    //joining the two tables and finding applications that belong to the current usersId
-    const auth = await pool.query('SELECT applications.id FROM applications JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 and companies.user_id = $2',
-      [applicationID, userId]
-    );
-    if(auth.rows.length === 0){
-      return res.status(404).json({error: 'Application not found'})
+    const id = parseId(req.params.id);
+    const application = id === null ? null : await updateApplication(userId!, id, input);
+    if (!application) {
+      return res.status(404).json({ error: 'Application or company not found' });
     }
-
-    //make sure the new company id request belongs to the user
-    const companyIdAuth = await pool.query('SELECT * FROM companies WHERE user_id = $1 AND id = $2',
-      [userId, company_id]
-    );
-    if(companyIdAuth.rows.length === 0){
-      return res.status(404).json({error: 'Company not found'});
-    }
-
-    //update the application
-    const result = await pool.query('UPDATE applications SET company_id = $1, role_title = $2, job_posting_url = $3, status = $4, application_date = $5, updated_at = NOW() WHERE id = $6 RETURNING *',
-      [company_id, role_title, job_posting_url, status, application_date, applicationID]
-    );
-    if(result.rows.length === 0){
-      return res.status(404).json({error: 'Application not found'});
-    }
-    res.json(result.rows[0]);
+    res.json(application);
   } catch (err) {
     sendServerError(res, err);
   }
 });
 
-router.delete('/:id', requireAuth, async (req, res) =>{
+router.delete('/:id', requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-  try{
-    const applicationID = req.params.id;
-    const auth = await pool.query('SELECT applications.id FROM applications JOIN companies on applications.company_id = companies.id WHERE applications.id = $1 and companies.user_id = $2',
-      [applicationID, userId]
-    )
-    if(auth.rows.length === 0){
-      return res.status(404).json({error: 'Application not found'});
+  try {
+    const id = parseId(req.params.id);
+    const application = id === null ? null : await deleteApplication(userId!, id);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found' });
     }
-
-    const result = await pool.query('DELETE FROM applications WHERE id = $1 RETURNING *',
-      [applicationID]
-    );
-    if(result.rows.length === 0){
-      return res.status(404).json({error: 'Application not found'});
-    }
-    res.json(result.rows[0]);
+    res.json(application);
   } catch (err) {
     sendServerError(res, err);
   }
 });
 
-router.get('/:id/interview_stages', requireAuth, async(req, res) => {
+router.get('/:id/interview_stages', requireAuth, async (req, res) => {
   const { userId } = getAuth(req);
-
-  try{
-    const applicationID = req.params.id;
-    const result = await pool.query('SELECT interview_stages.* FROM interview_stages JOIN applications ON interview_stages.application_id = applications.id JOIN companies ON applications.company_id = companies.id WHERE applications.id = $1 AND companies.user_id = $2 ORDER BY interview_stages.id DESC',
-      [applicationID, userId]
-    );
-    res.json(result.rows);
-    } catch (err){
-      sendServerError(res, err);
-  } 
+  try {
+    const id = parseId(req.params.id);
+    res.json(id === null ? [] : await listInterviewStagesByApplication(userId!, id));
+  } catch (err) {
+    sendServerError(res, err);
+  }
 });
 
 export default router;
