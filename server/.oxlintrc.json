@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc", "node"],
+  "categories": { "correctness": "error" },
+  "rules": {
+    // A promise that is never awaited or caught is a silent bug (e.g. a database write that fails unnoticed)
+    "typescript/no-floating-promises": "error",
+    // await on something that is not a promise is almost always a mistake
+    "typescript/await-thenable": "error",
+    // Express 5 handles async route handlers, so passing one is fine; the other checks (like `if (promise)`) stay on
+    "typescript/no-misused-promises": ["error", { "checksVoidReturn": false }]
+  }
+}

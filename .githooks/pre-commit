@@ -1,0 +1,18 @@
+#!/bin/sh
+# Runs lint + typecheck for whichever project (client/ or server/) has staged changes.
+# Tests are not run here (they need Postgres and are slower); CI runs them on every push.
+# One-time setup per clone:  git config core.hooksPath .githooks
+set -e
+cd "$(git rev-parse --show-toplevel)"
+changed=$(git diff --cached --name-only)
+
+check() {
+  dir=$1
+  if echo "$changed" | grep -q "^$dir/"; then
+    echo "pre-commit: checking $dir (lint + typecheck)..."
+    (cd "$dir" && npm run --silent lint && npm run --silent typecheck)
+  fi
+}
+
+check client
+check server

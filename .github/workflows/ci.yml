@@ -1,0 +1,68 @@
+# Runs on every push and pull request: lint, typecheck and tests for the server and the client.
+# It needs no secrets: Clerk and the AI services are faked in the tests, and the server tests use a
+# throwaway Postgres that only exists for the length of the run. It never connects to a real database.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# the token this workflow gets can only read the repo
+permissions:
+  contents: read
+
+# a newer push to the same branch cancels the older, still-running check
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust   # no password needed; the database is thrown away after the run
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # the tests connect without a username, so tell the Postgres tools and the pg library who to be
+      PGHOST: localhost
+      PGUSER: postgres
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  client:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test

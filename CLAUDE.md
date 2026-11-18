@@ -23,6 +23,8 @@ cd client && npm run build                   # tsc -b && vite build (this is the
 cd client && npm run lint                    # oxlint
 ```
 
+Checks (same three scripts in both projects): `npm run lint`, `npm run typecheck`, `npm test`. The server linter is oxlint with the type-aware add-on (`oxlint-tsgolint`), because typescript-eslint does not support TypeScript 7. A pre-commit hook in `.githooks/` runs lint + typecheck for whichever project you changed; enable it once per clone with `git config core.hooksPath .githooks`. GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck and tests for both projects on every push and pull request, with a throwaway Postgres 17 for the server tests.
+
 Environment files:
 - Server secrets live **outside the repo** in `~/.config/job-search-copilot/server.env` (override the path with `ENV_FILE`; loaded in `src/db.ts`): `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`. Do not read it or put keys back in the project folder; `.claude/settings.json` denies reads of `.env*` files and that directory.
 - `client/.env` (gitignored; public values only): `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_URL` (defaults to `http://localhost:3001`)
@@ -70,3 +72,15 @@ Local DB is Postgres, database `jobtracker`. Server tests: `cd server && npm tes
 - Do not run `server/schema.sql` against the local DB without asking; it deletes existing data.
 - Do not commit `.env` files (they are gitignored).
 - **After every change, justify it and list what to review by eye.** When you finish a change, explain your reasoning (what you changed, why, and what you considered and rejected). Then list the specific code the owner should read for themselves, with file and line links: anything touching authentication, ownership checks, secrets, CORS, error messages and logs, spending limits, user data or deletion, URL fetching, or the schema. For each item say what to look for and what could go wrong. "Check by hand" means sensitive or correctness-critical code, not just features worth clicking through. Also state anything you could not verify or that tests don't cover.
+
+
+## Testing
+-Favor a small number of meaningful tests over exhaustive coverage.
+-Do not write tests that only restate what the type system or ORM already guarantees.
+-Do test schema constraints our own code relies on (unique keys, foreign keys).
+-Never mock the thing being tested.
+
+
+## Comments
+-Don't write comments that restate the code. Explain why, not what.
+-When you change a function, update or delete any comment that no longer matches.

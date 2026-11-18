@@ -151,24 +151,25 @@ Seven fix tickets for code v2 keeps: error handling, server reliability and CORS
 ## 11. Proposed tickets (draft, in rough order)
 
 1. Create the `v2` branch; extract the repeated ownership-check SQL into one helper.
-2. New schema for listings, profiles, scores and tailored copies; Neon and Vercel deployment.
-3. Board fetchers (Greenhouse, Lever, Ashby) and the curated company file.
-4. Daily job: refresh, store, similarity numbers, mark closed; Remotive fetch.
-5. Adzuna live search with attribution.
-6. Discover page: search, filters, newest-first list, hidden-jobs line.
-7. Profile bar.
-8. PDF upload and resume reading (with paste fallback).
-9. Posting extraction (shared cache), AI-reply validation, usage metering, limits and the $4 cap.
-10. Hybrid scoring, batching, "why this score" and Sort by match.
-11. Tuning set: 25 rated pairs, calibration, regression check.
-12. Save / Apply / "I applied" flow.
-13. Tailoring: exact-quote checking, inline suggestions, tailored copy, change list; separate cover letter.
-14. Guest mode and sample resume.
-15. Add company by name or careers link (SSRF-safe).
-16. Delete my data.
-17. Add application manually (kept small).
-18. Remove v1 matches and skills code.
-19. Later: suggest companies from Adzuna listings (after testing the redirect).
+2. Dependency vulnerabilities: `npm audit` (checked 2026-11-17) reports 8 findings in the server (production: `body-parser` high, `proxy-addr` critical, `qs` moderate) and 6 in the client (production: `picomatch` / `vite` high). Read each advisory, decide whether it is exploitable here, then update the package or document why not. Re-run the audit in CI.
+3. New schema for listings, profiles, scores and tailored copies; Neon and Vercel deployment.
+4. Board fetchers (Greenhouse, Lever, Ashby) and the curated company file.
+5. Daily job: refresh, store, similarity numbers, mark closed; Remotive fetch.
+6. Adzuna live search with attribution.
+7. Discover page: search, filters, newest-first list, hidden-jobs line.
+8. Profile bar.
+9. PDF upload and resume reading (with paste fallback).
+10. Posting extraction (shared cache), AI-reply validation, usage metering, limits and the $4 cap.
+11. Hybrid scoring, batching, "why this score" and Sort by match.
+12. Tuning set: 25 rated pairs, calibration, regression check.
+13. Save / Apply / "I applied" flow.
+14. Tailoring: exact-quote checking, inline suggestions, tailored copy, change list; separate cover letter.
+15. Guest mode and sample resume.
+16. Add company by name or careers link (SSRF-safe).
+17. Delete my data.
+18. Add application manually (kept small).
+19. Remove v1 matches and skills code.
+20. Later: suggest companies from Adzuna listings (after testing the redirect).
 
 ## 12. Unverified assumptions (test before relying on them)
 

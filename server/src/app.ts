@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import { clerkMiddleware, getAuth } from '@clerk/express';
-import { pool } from './db';
+import { clerkMiddleware } from '@clerk/express';
+//Imported only for its side effect: db.ts loads the secrets file, and that must happen before the routers
+//below load the AI modules (they read their API keys the moment they are imported).
+import './db';
 import type { Request, Response, NextFunction} from 'express'
 import companiesRouter from './routes/companies'
 import applicationsRouter from './routes/applications'
