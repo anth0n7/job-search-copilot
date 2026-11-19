@@ -10,6 +10,17 @@ One entry per ticket from [docs/v2-spec.md](docs/v2-spec.md) section 11, newest 
 - **Commit:** the commit message names this ticket
 -->
 
+## Ticket 3 + 4 (rest): curated boards and first real run (2026-11-19)
+- **What changed:** `server/data/boards.json` with 57 boards: 34 Greenhouse, 3 Lever, 20 Ashby (48 well-known US tech companies, approved by the owner, plus 9 found because they hire in Houston: Fervo Energy, Venus Aerospace, Bot Auto, ON.energy, Rugged Robotics, Sunnova, Pariveda, Directive, Base Power). Loaded into `jobtracker_v2` and fetched for real.
+- **Why:** steps 3 and 4 of the plan. Result: 57 of 57 boards fetched, 0 failed, 11,426 listings, 1 posting skipped as unusable, 148 listings with Houston in the location.
+- **Decisions and assumptions:**
+  - Every board was checked against the live provider API (answers, has open jobs) before it was added; boards that 404 or had no jobs were left out. Ashby names in lowercase all work.
+  - The Houston additions were found with a web search for employers on these three providers, then checked against the live API for current Houston postings. Employers with only a few Houston roles outside tech/engineering (construction, therapy, property management) were left out.
+  - Descriptions in the database were checked for leftover HTML: none. The few oddities are in the plan's open questions.
+  - Only Houston in a posting's main location is counted; Ashby secondary locations are not stored (plan.md, open questions).
+  - Run only against the local development database `jobtracker_v2` (the commands print the name first).
+- **Commit:** "Add curated board list and first real run (ticket 3 + 4, rest)"
+
 ## Ticket 3 + 4 (part): board loader (2026-11-19)
 - **What changed:** `npm run seed:boards` (`server/src/seedBoards.ts`) loads `server/data/boards.json` into `company_boards`; `addBoards` in the listings repository does the insert. The list itself comes in a separate commit after the owner approves it.
 - **Why:** step 3 of the plan: a way to get the curated list into the database.

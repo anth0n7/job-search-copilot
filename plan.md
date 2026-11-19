@@ -4,7 +4,7 @@ Last updated 2026-11-19. The full design is in [docs/v2-spec.md](docs/v2-spec.md
 
 ## Where we stand
 
-Branch `v2`, at `030f6c0` (merge of PR #3); the listings repository is on branch `listings-repository`, not yet merged. CI green on `v2`. Server: 116 tests passing; client: 30. Lint and typecheck clean in both.
+Branch `v2`, at `030f6c0` (merge of PR #3); the whole job-listings ticket (3 + 4) is on branch `listings-repository`, in a PR into `v2`. CI green on `v2`. Server: 117 tests passing; client: 30. Lint and typecheck clean in both.
 
 ### Done
 
@@ -15,8 +15,7 @@ Branch `v2`, at `030f6c0` (merge of PR #3); the listings repository is on branch
 | 19 | v1 AI code and its tables removed | merged earlier |
 | 3 (part) | `company_boards` and `listings` tables + migration `0002` | PR #2 |
 | 4 (part) | Safe HTTP helper and Greenhouse / Lever / Ashby fetchers with fixture tests | PR #2 |
-| 3 + 4 (part) | `npm run fetch:boards` (fetches every board, saves, prints counts) | branch `listings-repository` |
-| 3 + 4 (part) | Listings repository (`saveBoardListings`, `recordFetchFailure`) and a lint rule keeping it out of routes | branch `listings-repository` |
+| 3 + 4 (rest) | Listings repository, `npm run fetch:boards`, `npm run seed:boards`, 57 curated boards (48 US tech + 9 with Houston jobs), first real run: 11,426 listings, 148 in Houston | PR from `listings-repository` |
 | Workflow | `./check.sh`, Stop hook, workflow rules in CLAUDE.md, CHANGELOG.md, client build in CI; branch protection on `main` and `v2` | PR #3 |
 
 ### Local setup
@@ -26,24 +25,11 @@ Branch `v2`, at `030f6c0` (merge of PR #3); the listings repository is on branch
 - The pre-commit hook is on (`core.hooksPath .githooks`). It runs lint + typecheck, not tests.
 - Server (`cd server && npm run dev`) and client (`cd client && npm run dev`) both run; the page renders.
 
-## Next: finish the job-listings ticket (3 + 4)
+## Just finished: the job-listings ticket (3 + 4)
 
-Each step: propose first, write the test first and show it failing, then make it pass.
+Boards are in `server/data/boards.json`; `npm run seed:boards` loads them into `company_boards` and `npm run fetch:boards` fetches them all. The first real run against `jobtracker_v2` fetched all 57 boards (0 failed) in about 22 seconds.
 
-1. ~~**Listings repository**~~ **done** (`server/src/repositories/listings.ts`; lint rule keeps routes from importing it)
-   - Save a board's listings in one transaction. A posting already stored (same board + posting id) is updated, not duplicated; `last_seen_at` moves forward.
-   - Record each fetch on the board: `last_fetched_at`, or a short fixed error message (never the raw error).
-   - These tables are shared, so this is the one repository without a `userId`. It must never be called from a user-facing route.
-2. ~~**Manual fetch command**~~ **done** (`npm run fetch:boards`)
-   - Reads every board from `company_boards`, picks the right fetcher, saves the results, prints counts (fetched / skipped / failed).
-   - One failing board must not stop the others.
-3. **Curated company list** (about 30-50 US tech companies)
-   - I research and check that every board answers; you approve the list before it is committed.
-   - Check board names with capitals (Ashby) still work in lowercase, since our board-name rule is lowercase only.
-   - A way to load the list into `company_boards`.
-4. **First real run** against `jobtracker_v2`, and a look at a few real descriptions to check the plain-text output.
-
-**Not in this ticket (on purpose):** marking listings closed (ticket 5, with a safety rule against closing everything after a failed fetch), duplicates across sources (once Remotive exists), and per-user following of boards (ticket 16).
+**Not in this ticket (on purpose):** marking listings closed (ticket 5, with a safety rule against closing everything after a failed fetch; it also decides whether saving a closed posting again reopens it), duplicates across sources (once Remotive exists), and per-user following of boards (ticket 16).
 
 ## After that
 
@@ -59,8 +45,10 @@ In the order agreed so far. The order after deployment is still open.
 ## Open questions and known gaps
 
 - **Constraint tests never seen failing for the right reason.** `schema.listings.test.ts` was written after the migration. You chose to keep it as is.
-- **Lever EU boards** (`api.eu.lever.co`) are not on the allow-list, so EU-hosted companies would be refused. Decide when building the curated list.
+- **Lever EU boards** (`api.eu.lever.co`) are not on the allow-list, so EU-hosted companies would be refused. None are on the curated list.
+- **Board names with a dot** (e.g. Persona AI's `persona.ai`) are refused by our lowercase-letters, digits, `_` and `-` rule, so that company is not on the list.
 - **Unescaping:** Greenhouse descriptions are unescaped for the five common HTML codes only; numeric codes (`&#8217;`) have not been seen in real data yet.
-- **No live run yet:** the fetchers have only run against saved fixtures.
+- **Ashby secondary locations are dropped:** only a posting's main location is stored, so a role listed as "Remote" with Houston as a second location is not found by a Houston search (Directive: 64 listings, 0 matched; Pariveda 3 of 4). Decide in the Discover ticket (7).
+- **Rare text quirks in real data:** 2 Twilio postings contain literal `<...>` text (not HTML), 1 Okta posting has a stray `&amp;`, and 1 Zoox posting has no description at all.
 - **README.md** still describes v1; rewrite when v2 ships.
 - **`claude-work` branch** holds vendored third-party skill files: never push it.
