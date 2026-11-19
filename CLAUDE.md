@@ -13,6 +13,8 @@ Two independent npm projects (there is no root `package.json`):
 ## Commands
 
 ```bash
+./check.sh                                   # everything: lint, typecheck, tests (both) + client build; needs local Postgres
+
 # server (http://localhost:3001, port is hardcoded in src/index.ts)
 cd server && npm install && npm run dev      # tsx watch
 cd server && npm run typecheck               # tsc --noEmit
@@ -88,3 +90,16 @@ Phase 0 fixed the signed-out `Bearer null` requests, the raw database errors sen
 ## Comments
 - Don't write comments that restate the code. Explain why, not what.
 - When you change a function, update or delete any comment that no longer matches.
+
+
+## Workflow rules
+- **Check:** run `./check.sh` after every change (a Stop hook in `.claude/hooks/` also runs it automatically when files under `client/` or `server/` changed). Continue only on green; never call a ticket done on red.
+- **Approval:** before starting a ticket (or part of one), propose the plan (files, approach, tests, trade-offs) and wait for a yes. Inside an approved plan, decide routine details yourself and record them in the ticket's CHANGELOG entry.
+- **Stop and ask** when the spec is unclear about behaviour, a test still fails after two attempts, or a change touches data handling, security, a public interface (API routes or payloads), a database migration, adds a dependency, or goes beyond the approved plan.
+- **Budget:** after two failed attempts at the same problem, stop and report what you tried instead of looping.
+- **Branches and PRs:** work on a feature branch made from `v2`; PRs target `v2` until v2 ships, then `main`. Never push to `main` or `v2` directly. One PR per ticket, opened only when the check is green. Never merge a PR; the owner reviews and merges.
+- **Secrets:** never read, print or commit credentials. Configuration comes from environment variables only (names are listed under "Environment files" above).
+- **Migrations:** write them as reviewable files (workflow in Layout). Never run one against production.
+- **Tests:** write the test first and see it fail for the right reason. Never delete or weaken a test to make it pass.
+- **Scope:** work through the spec's tickets in order and build only what the current ticket needs.
+- **Log and commit:** when a ticket passes, add a [CHANGELOG.md](CHANGELOG.md) entry (what changed, why, assumptions) and make one commit that names the ticket and points to that entry. If a decision changes the spec, update `docs/v2-spec.md` in the same commit.

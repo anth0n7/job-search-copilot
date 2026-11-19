@@ -23,5 +23,18 @@
       "Bash(source *job-search-copilot*)",
       "Bash(cp *job-search-copilot* *)"
     ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-check.sh",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
   }
 }
