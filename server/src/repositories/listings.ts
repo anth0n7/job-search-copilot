@@ -14,6 +14,14 @@ export const fetchErrors = {
   unreadable: 'The board reply was not understood',
 } as const;
 
+// Every board the fetch job should visit, oldest first.
+export async function listBoards() {
+  return db
+    .select({ id: companyBoards.id, provider: companyBoards.provider, board_token: companyBoards.board_token, company_name: companyBoards.company_name })
+    .from(companyBoards)
+    .orderBy(companyBoards.id);
+}
+
 // One insert statement is limited to 65,535 values (about 8,000 rows of 8 columns) and boards can hold
 // thousands of long descriptions, so rows go in smaller groups, all inside one transaction.
 const CHUNK_SIZE = 200;

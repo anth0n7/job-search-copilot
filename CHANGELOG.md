@@ -10,6 +10,17 @@ One entry per ticket from [docs/v2-spec.md](docs/v2-spec.md) section 11, newest 
 - **Commit:** the commit message names this ticket
 -->
 
+## Ticket 3 + 4 (part): fetch command (2026-11-19)
+- **What changed:** `npm run fetch:boards` (`server/src/fetchBoards.ts`) visits every row of `company_boards` through `fetchAllBoards` (`server/src/boards/fetchAll.ts`), saves the listings, and prints board and listing counts. `listBoards` added to the listings repository.
+- **Why:** step 2 of the plan: something has to call the fetchers and the repository.
+- **Decisions and assumptions:**
+  - Boards run one after another (kind to the providers; the list is small). One failing board is recorded and skipped.
+  - An unreachable board (network or HTTP error) and an unreadable reply (valid JSON, wrong shape) store different fixed messages. A database error while saving is logged by code only and leaves the board's message alone, since it is not the board's fault.
+  - "Skipped" in the output means postings the fetchers rejected as unusable, counted separately from failed boards.
+  - Exit code is 1 if any board failed, so a scheduler can notice later. It prints the database name first, like `db:migrate`.
+  - Tests fake only the network call; boards, parsers and saving run for real against the test database.
+- **Commit:** "Add fetch:boards command (ticket 3 + 4, part)"
+
 ## Ticket 3 + 4 (part): listings repository (2026-11-19)
 - **What changed:** `server/src/repositories/listings.ts` with `saveBoardListings` (upsert a board's listings and mark the board fetched, in one transaction) and `recordFetchFailure` (fixed messages only). A lint rule in `server/.oxlintrc.json` makes any import of it from `src/routes/` fail.
 - **Why:** the fetchers return listings but nothing stored them. This is step 1 of the plan; the fetch command, the company list and the first real run are the next steps.
