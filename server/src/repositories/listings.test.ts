@@ -4,7 +4,7 @@ import type { NormalizedListing } from '../boards/listing';
 import { db } from '../db';
 import { errorCode } from '../errors';
 import { companyBoards, listings } from '../schema';
-import { fetchErrors, recordFetchFailure, saveBoardListings } from './listings';
+import { addBoards, fetchErrors, recordFetchFailure, saveBoardListings } from './listings';
 
 async function addBoard(board_token = 'acme') {
   const [row] = await db.insert(companyBoards).values({ provider: 'greenhouse', board_token, company_name: 'Acme' }).returning();
@@ -95,5 +95,17 @@ describe('recordFetchFailure', () => {
 
     await saveBoardListings(board.id, [posting('1')]);
     expect((await boardRow(board.id)).last_fetch_error).toBeNull();
+  });
+});
+
+describe('addBoards', () => {
+  it('can be run again without duplicating boards, and picks up a corrected company name', async () => {
+    const board = { provider: 'greenhouse' as const, board_token: 'acme', company_name: 'Acme' };
+    await addBoards([board]);
+    await addBoards([{ ...board, company_name: 'Acme Inc' }]);
+
+    const rows = await db.select().from(companyBoards);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.company_name).toBe('Acme Inc');
   });
 });

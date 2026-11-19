@@ -10,6 +10,15 @@ One entry per ticket from [docs/v2-spec.md](docs/v2-spec.md) section 11, newest 
 - **Commit:** the commit message names this ticket
 -->
 
+## Ticket 3 + 4 (part): board loader (2026-11-19)
+- **What changed:** `npm run seed:boards` (`server/src/seedBoards.ts`) loads `server/data/boards.json` into `company_boards`; `addBoards` in the listings repository does the insert. The list itself comes in a separate commit after the owner approves it.
+- **Why:** step 3 of the plan: a way to get the curated list into the database.
+- **Decisions and assumptions:**
+  - Safe to run again: a board already there only gets its company name refreshed.
+  - The file is checked for shape with Zod (already a dependency); the database rules still reject an uppercase or unsafe board name, and a bad entry rejects the whole load rather than loading part of it.
+  - Prints the database name first, like `db:migrate`.
+- **Commit:** "Add seed:boards loader (ticket 3 + 4, part)"
+
 ## Ticket 3 + 4 (part): fetch command (2026-11-19)
 - **What changed:** `npm run fetch:boards` (`server/src/fetchBoards.ts`) visits every row of `company_boards` through `fetchAllBoards` (`server/src/boards/fetchAll.ts`), saves the listings, and prints board and listing counts. `listBoards` added to the listings repository.
 - **Why:** step 2 of the plan: something has to call the fetchers and the repository.

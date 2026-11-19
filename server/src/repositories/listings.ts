@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import type { NormalizedListing } from '../boards/listing';
 import { db } from '../db';
-import { companyBoards, listings } from '../schema';
+import { BOARD_PROVIDERS, companyBoards, listings } from '../schema';
 
 // SHARED DATA: company_boards and listings have no user_id (every user sees the same listings), so unlike
 // every other repository the functions here take no userId and nothing scopes them to a user. They are for
@@ -20,6 +20,16 @@ export async function listBoards() {
     .select({ id: companyBoards.id, provider: companyBoards.provider, board_token: companyBoards.board_token, company_name: companyBoards.company_name })
     .from(companyBoards)
     .orderBy(companyBoards.id);
+}
+
+// Adds boards, or corrects the company name of one already there. Safe to run again with the same list.
+// The database rules (provider list, lowercase board name) reject a bad entry and the whole call with it.
+export async function addBoards(boards: { provider: (typeof BOARD_PROVIDERS)[number]; board_token: string; company_name: string }[]) {
+  if (boards.length === 0) return;
+  await db
+    .insert(companyBoards)
+    .values(boards)
+    .onConflictDoUpdate({ target: [companyBoards.provider, companyBoards.board_token], set: { company_name: sql`excluded.company_name` } });
 }
 
 // One insert statement is limited to 65,535 values (about 8,000 rows of 8 columns) and boards can hold
