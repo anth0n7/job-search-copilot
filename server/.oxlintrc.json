@@ -9,5 +9,17 @@
     "typescript/await-thenable": "error",
     // Express 5 handles async route handlers, so passing one is fine; the other checks (like `if (promise)`) stay on
     "typescript/no-misused-promises": ["error", { "checksVoidReturn": false }]
-  }
+  },
+  "overrides": [
+    {
+      // repositories/listings has no userId (shared data), so a route calling it would skip every ownership check
+      "files": ["src/routes/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          { "patterns": [{ "group": ["**/repositories/listings"], "message": "listings is shared data with no userId; only the fetch job may import it, never a route." }] }
+        ]
+      }
+    }
+  ]
 }

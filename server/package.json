@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts",
+    "fetch:boards": "tsx src/fetchBoards.ts",
+    "seed:boards": "tsx src/seedBoards.ts",
     "test": "vitest run"
   },
   "keywords": [],
