@@ -102,4 +102,4 @@ Phase 0 fixed the signed-out `Bearer null` requests, the raw database errors sen
 - **Migrations:** write them as reviewable files (workflow in Layout). Never run one against production.
 - **Tests:** write the test first and see it fail for the right reason. Never delete or weaken a test to make it pass.
 - **Scope:** work through the spec's tickets in order and build only what the current ticket needs.
-- **Log and commit:** when a ticket passes, add a [CHANGELOG.md](CHANGELOG.md) entry (what changed, why, assumptions) and make one commit that names the ticket and points to that entry. If a decision changes the spec, update `docs/v2-spec.md` in the same commit.
+- **Log and commit:** when a ticket passes, add a [CHANGELOG.md](CHANGELOG.md) entry (what changed, why, assumptions) and update [plan.md](plan.md) (move the ticket to Done, refresh "Where we stand" and "Next"), and make one commit that names the ticket and points to that entry. If a decision changes the spec, update `docs/v2-spec.md` in the same commit.
