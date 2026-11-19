@@ -4,7 +4,7 @@ Last updated 2026-11-19. The full design is in [docs/v2-spec.md](docs/v2-spec.md
 
 ## Where we stand
 
-Branch `v2`, at `030f6c0` (merge of PR #3). CI green. Server: 106 tests passing; client: 30. Lint and typecheck clean in both.
+Branch `v2`, at `030f6c0` (merge of PR #3); the listings repository is on branch `listings-repository`, not yet merged. CI green on `v2`. Server: 113 tests passing; client: 30. Lint and typecheck clean in both.
 
 ### Done
 
@@ -15,6 +15,7 @@ Branch `v2`, at `030f6c0` (merge of PR #3). CI green. Server: 106 tests passing;
 | 19 | v1 AI code and its tables removed | merged earlier |
 | 3 (part) | `company_boards` and `listings` tables + migration `0002` | PR #2 |
 | 4 (part) | Safe HTTP helper and Greenhouse / Lever / Ashby fetchers with fixture tests | PR #2 |
+| 3 + 4 (part) | Listings repository (`saveBoardListings`, `recordFetchFailure`) and a lint rule keeping it out of routes | branch `listings-repository` |
 | Workflow | `./check.sh`, Stop hook, workflow rules in CLAUDE.md, CHANGELOG.md, client build in CI; branch protection on `main` and `v2` | PR #3 |
 
 ### Local setup
@@ -28,7 +29,7 @@ Branch `v2`, at `030f6c0` (merge of PR #3). CI green. Server: 106 tests passing;
 
 Each step: propose first, write the test first and show it failing, then make it pass.
 
-1. **Listings repository** (`server/src/repositories/listings.ts`)
+1. ~~**Listings repository**~~ **done** (`server/src/repositories/listings.ts`; lint rule keeps routes from importing it)
    - Save a board's listings in one transaction. A posting already stored (same board + posting id) is updated, not duplicated; `last_seen_at` moves forward.
    - Record each fetch on the board: `last_fetched_at`, or a short fixed error message (never the raw error).
    - These tables are shared, so this is the one repository without a `userId`. It must never be called from a user-facing route.

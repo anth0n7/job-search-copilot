@@ -10,6 +10,17 @@ One entry per ticket from [docs/v2-spec.md](docs/v2-spec.md) section 11, newest 
 - **Commit:** the commit message names this ticket
 -->
 
+## Ticket 3 + 4 (part): listings repository (2026-11-19)
+- **What changed:** `server/src/repositories/listings.ts` with `saveBoardListings` (upsert a board's listings and mark the board fetched, in one transaction) and `recordFetchFailure` (fixed messages only). A lint rule in `server/.oxlintrc.json` makes any import of it from `src/routes/` fail.
+- **Why:** the fetchers return listings but nothing stored them. This is step 1 of the plan; the fetch command, the company list and the first real run are the next steps.
+- **Decisions and assumptions:**
+  - Saving and marking the board fetched share one transaction, so a failed save never leaves a board looking fresh.
+  - Rows are inserted 200 at a time (Postgres caps the values in one statement); a repeated id inside one reply keeps the last copy.
+  - An update refreshes title, location, link, description, posted date and `last_seen_at`. `first_seen_at` and `closed_at` are untouched; whether saving a closed posting again reopens it is left to ticket 5.
+  - `recordFetchFailure` takes a key into `fetchErrors`, not text, so raw error text cannot reach the column.
+  - No schema change, migration, dependency or route.
+- **Commit:** "Add listings repository (ticket 3 + 4, part)"
+
 ## Workflow setup (2026-11-18)
 - **What changed:** added `./check.sh` (lint, typecheck, tests for both projects plus the client build), a Claude Code Stop hook that runs it when code under `client/` or `server/` changed, a `Workflow rules` section in `CLAUDE.md`, this changelog, and the client build step in CI.
 - **Why:** one command that decides "green", run automatically, with the same steps in CI, so a change is never called done on red.
