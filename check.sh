@@ -1,7 +1,7 @@
 #!/bin/sh
 # The one local check: lint, typecheck, tests and build for both projects, stopping at the first failure.
-# CI (.github/workflows/ci.yml) runs the same steps. The schema-vs-migrations check is CI-only because
-# running `db:generate` locally would write a new migration file instead of just reporting the drift.
+# CI (.github/workflows/ci.yml) runs the same steps. Two checks are CI-only: schema-vs-migrations (running
+# `db:generate` locally would write a new migration file instead of just reporting the drift) and `npm audit` (needs network).
 set -e
 cd "$(dirname "$0")"
 

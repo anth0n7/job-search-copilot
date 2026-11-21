@@ -10,6 +10,23 @@ One entry per ticket from [docs/v2-spec.md](docs/v2-spec.md) section 11, newest 
 - **Commit:** the commit message names this ticket
 -->
 
+## Ticket 2: dependency vulnerabilities (2026-11-21)
+- **What changed:** `npm audit fix` in both projects (lockfiles only, no `package.json` change, no major upgrades). CI now runs `npm audit --omit=dev --audit-level=high` as the last step of both the server and client jobs.
+- **Why:** the audit reported 7 findings in the server and 2 in the client (the spec's list of 8 and 6 was from 2026-11-17 and has moved on). `picomatch` 4.0.7 is no longer flagged by the audit and needed no change.
+- **Findings and decisions:**
+  - `body-parser` (high, DoS from trailing bytes after a compressed body): reachable. `express.json()` is mounted (`server/src/app.ts:27`) and decompresses gzip. Updated.
+  - `qs` (moderate, parsing/stringify DoS): not reachable today. Express 5 uses Node's built-in query parser, and only `express.json()` is mounted. Updated anyway.
+  - `proxy-addr` (critical, IP spoofing through an IPv4-mapped IPv6 trust subnet): not exploitable today. It is only consulted when `trust proxy` is set, and nothing reads `req.ip`. It would matter if `trust proxy` is later set with an IPv4 subnet (for example behind Vercel). Updated anyway.
+  - Client `vite` (high, dev-server and `launch-editor` issues) and `source-map-js` (high, DoS through a crafted source map): only reachable while `npm run dev` runs on a developer machine. Updated anyway. `vite` went 8.2.0 -> 8.3.8, a minor bump within the `^8.1.1` range, not a patch. What moved with it: rolldown and its native bindings 1.2.1 -> 1.2.19, `postcss` 8.5.25 -> 8.5.33, `@oxc-project/types` 0.142 -> 0.156, and an optional wasm binding that pulls the pre-release `@emnapi/*` 2.0.0-beta.2 (installed only on that platform).
+  - Server `drizzle-kit` -> `@esbuild-kit/*` -> `esbuild@0.18.20` (moderate, any website can query the esbuild dev server): **not fixed, accepted.** It is dev-only and we never run esbuild's serve mode. The only fix npm offers (`--force`) installs drizzle-kit 0.18.1, a downgrade. drizzle-kit 1.0.0-rc.5 no longer depends on `@esbuild-kit`, so revisit when drizzle-kit 1.0 is stable. Considered and rejected: an npm `overrides` entry forcing a newer esbuild, because it forces an unreviewed transitive version into a tool that generates our migrations. The server audit still reports these 4 moderate findings; the production audit is clean.
+- **Decisions and assumptions:**
+  - CI threshold: fail on high or critical in production dependencies (`--omit=dev`). Moderate findings and dev-only findings do not fail CI: they do not ship, and a new advisory in a build tool should not block unrelated PRs. They are read by hand at each ticket.
+  - For npm's purposes `vite`, `postcss` and `source-map-js` ARE production dependencies in the client: `client/package.json` lists `@tailwindcss/vite` under `dependencies`, which peers on `vite`, and `node_modules/vite` has no `"dev": true`. So a future high advisory in `vite` WILL fail CI even though it is a build tool. Chosen: document it and leave `package.json` alone. Moving `@tailwindcss/vite` and `tailwindcss` to `devDependencies` is a possible later change that needs owner approval.
+  - The audit is the last step of each job, so an advisory or an `npm audit` outage does not stop lint and tests from running.
+  - A new advisory can make CI red with no code change; the answer is to run `npm audit fix` or document an exception here.
+  - Verified with `./check.sh` (green). The audit is CI-only (it needs network).
+- **Commit:** the commit message names ticket 2
+
 ## Ticket 3 + 4 (rest): curated boards and first real run (2026-11-19)
 - **What changed:** `server/data/boards.json` with 57 boards: 34 Greenhouse, 3 Lever, 20 Ashby (48 well-known US tech companies, approved by the owner, plus 9 found because they hire in Houston: Fervo Energy, Venus Aerospace, Bot Auto, ON.energy, Rugged Robotics, Sunnova, Pariveda, Directive, Base Power). Loaded into `jobtracker_v2` and fetched for real.
 - **Why:** steps 3 and 4 of the plan. Result: 57 of 57 boards fetched, 0 failed, 11,426 listings, 1 posting skipped as unusable, 148 listings with Houston in the location.

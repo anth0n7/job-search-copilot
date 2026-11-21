@@ -29,7 +29,7 @@ cd client && npm run typecheck               # tsc -b
 cd client && npm run lint                    # oxlint
 ```
 
-Checks (same three scripts in both projects): `npm run lint`, `npm run typecheck`, `npm test`. The server linter is oxlint with the type-aware add-on (`oxlint-tsgolint`), because typescript-eslint does not support TypeScript 7. A pre-commit hook in `.githooks/` runs lint + typecheck for whichever project you changed; enable it once per clone with `git config core.hooksPath .githooks`. GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck and tests for both projects on every push and pull request, with a throwaway Postgres 17 for the server tests.
+Checks (same three scripts in both projects): `npm run lint`, `npm run typecheck`, `npm test`. The server linter is oxlint with the type-aware add-on (`oxlint-tsgolint`), because typescript-eslint does not support TypeScript 7. A pre-commit hook in `.githooks/` runs lint + typecheck for whichever project you changed; enable it once per clone with `git config core.hooksPath .githooks`. GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck and tests for both projects on every push and pull request, with a throwaway Postgres 17 for the server tests, then `npm audit --omit=dev --audit-level=high` as the last step of each job (CI-only).
 
 Environment files:
 - Server secrets live **outside the repo** in `~/.config/job-search-copilot/server.env` (override the path with `ENV_FILE`; loaded in `src/db.ts`): `DATABASE_URL`, `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`. Do not read it or put keys back in the project folder; `.claude/settings.json` denies reads of `.env*` files and that directory.
@@ -70,7 +70,7 @@ Phase 0 fixed the signed-out `Bearer null` requests, the raw database errors sen
 - The v1 AI features are gone, so the AI-related problems found earlier (unvalidated Claude replies, no spending limits, no loading state on the paid buttons, no prompt-injection defenses) are now **requirements for the v2 AI tickets** in `docs/v2-spec.md`, not bugs in this code.
 - Input validation is limited to blank-name checks; there is no schema-based validation of request bodies.
 - Route input checks are hand-written per route (`readXInput` functions); there is no schema-based validation library yet (Zod is planned).
-- `npm audit` reports vulnerable dependencies (see the dependency ticket in the spec).
+- `npm audit` (server) still reports 4 moderate dev-only findings from drizzle-kit's bundled esbuild; accepted, see CHANGELOG ticket 2. CI fails on high/critical production findings.
 
 ## Working style for this repo
 
