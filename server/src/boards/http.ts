@@ -7,7 +7,10 @@ export { BOARD_PROVIDERS as PROVIDERS };
 export type Provider = (typeof BOARD_PROVIDERS)[number];
 
 // Exact host names, never "ends with": "boards-api.greenhouse.io.evil.com" must not pass.
-const ALLOWED_HOSTS = new Set(['boards-api.greenhouse.io', 'api.lever.co', 'api.ashbyhq.com']);
+const ALLOWED_HOSTS = new Set(['boards-api.greenhouse.io', 'api.lever.co', 'api.ashbyhq.com', 'remotive.com']);
+
+// Remotive's one public endpoint. No parameters: the whole feed in one request.
+export const REMOTIVE_URL = 'https://remotive.com/api/remote-jobs';
 
 // The board name is pasted into a URL, so it must not be able to add a path, query or another host.
 const BOARD_NAME = /^[a-z0-9_-]+$/;

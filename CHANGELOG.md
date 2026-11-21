@@ -10,6 +10,28 @@ One entry per ticket from [docs/v2-spec.md](docs/v2-spec.md) section 11, newest 
 - **Commit:** the commit message names this ticket
 -->
 
+## Ticket 5: daily job (2026-11-21)
+- **What changed:**
+  - `npm run daily` (`server/src/dailyJob.ts`, logic in `runDailyJob.ts`): fetch all boards, fetch Remotive, mark duplicates, then compute similarity numbers. Each step reports its own failures and the next still runs.
+  - Closing: `saveBoardListings` now closes open listings missing from a successful reply and reopens a listing that reappears. Migration `0003` (reviewed; its one `DROP` is the `company_boards_provider_valid` CHECK, dropped and re-added to allow `'remotive'`).
+  - Remotive: `boards/remotive.ts` (parser + one-request fetch), `boards/refreshRemotive.ts`, host added to the allow-list in `boards/http.ts`, fixture-based tests.
+  - Duplicates: `markDuplicates` sets `listings.duplicate_of` on a Remotive listing when an open company-board listing has the same company, title and location (spaces and capitals ignored).
+  - Similarity: `embeddings/embedder.ts` (an `Embedder` interface, `cosine`, a Voyage implementation), `embeddings/embedStep.ts`, job-only repository `repositories/similarity.ts`, new tables `listing_embeddings`, `resume_embeddings`, `listing_similarities`.
+- **Why:** spec 3.3, 3.4 and ticket 5; the plan's notes asked for a closing safety rule, a reopen decision and cross-source duplicates.
+- **Decisions and assumptions:**
+  - **Safety rule for closing:** nothing is closed when the fetch failed (the save is never reached), when the reply is empty for a board that had open listings, or when the reply would close more than half of a board with 10 or more open listings. Then the new listings are still saved, nothing is closed, and the board gets the fixed message `fetchErrors.incomplete`; a normal later fetch clears it. The 10 and 50% are my starting values. Consequence: a company that really removes more than half its jobs at once stays open until it shrinks again or someone looks.
+  - **Reopen:** saving a listing again clears `closed_at`. A posting that is back on the board is live; `first_seen_at` is kept.
+  - **Remotive is a row in `company_boards`** (provider `remotive`, token `remotive`) so it shares the fetch status, unique key and closing logic. Listings get a nullable `company_name` (only Remotive sets it; board listings use the board's name). Considered and rejected: making `listings.board_id` nullable plus a `source` column (more migration, and every query would need both).
+  - **Remotive limit:** one request per run, no retries (`retries: 0`, because a retry is a request), and `claimFetchSlot` refuses a new attempt within 6 hours of the last one (stored in `company_boards.last_attempt_at`, atomic), so at most 4 a day however often the job is started. Location is stored as `Remote - <who may apply>` or `Remote`. Remotive's non-US-only jobs are kept; the Discover ticket (7) decides filtering. Attribution (a Remotive link and credit on every Remotive listing) is for the Discover ticket: a listing is from Remotive when its board's provider is `remotive`.
+  - **Duplicates are flagged, not deleted:** `duplicate_of` is recomputed every run, so it follows boards closing and reopening. Two board listings matching each other (one company on two boards) are not merged. Discover (ticket 7) must hide rows where `duplicate_of` is set.
+  - **Similarity numbers:** listings are embedded once (shared), each resume once (re-embedded when its text hash changes, which also deletes its similarity rows), and the raw cosine of each resume/open-listing pair is stored. Rescaling to 0-100 stays with scoring (ticket 11). Embeddings are float arrays, not pgvector: similarity is computed in code, and no vector search is needed. Closed and duplicate listings are not embedded.
+  - **Spending guard until ticket 10:** at most 3000 listings embedded per run (newest first), batches of 32, and one failed embedding call stops the paid steps for that run (similarity for what is already embedded still runs). Texts are cut to 6000 characters. The global monthly cap and per-day metering belong to ticket 10.
+  - **Embedder:** model `voyage-4-lite` (what v1 used). **The Voyage implementation has never run against the real service**: its request and reply handling is tested with a fake `fetch`, all other tests use a fake embedder, and the job skips the step if `VOYAGE_API_KEY` is unset. The first real run is the owner's to verify. Resume text goes to Voyage, as in v1; nothing logs text, only counts and fixed messages.
+  - `repositories/similarity.ts` is job-only like `repositories/listings.ts` (no `userId`); the lint rule in `.oxlintrc.json` now forbids importing it from a route. Reading a user's own numbers needs a user-scoped function in a later ticket.
+  - **Not done (deployment, out of scope):** the Vercel cron route/schedule. `npm run daily` is the entry point it will call; the route will need its own secret check.
+  - Not applied to any database except local `jobtracker_v2` (migration `0003`). Not run live: no Remotive, Voyage or board requests were made by tests.
+- **Commit:** the commit message names ticket 5
+
 ## Ticket 2: dependency vulnerabilities (2026-11-21)
 - **What changed:** `npm audit fix` in both projects (lockfiles only, no `package.json` change, no major upgrades). CI now runs `npm audit --omit=dev --audit-level=high` as the last step of both the server and client jobs.
 - **Why:** the audit reported 7 findings in the server and 2 in the client (the spec's list of 8 and 6 was from 2026-11-17 and has moved on). `picomatch` 4.0.7 is no longer flagged by the audit and needed no change.

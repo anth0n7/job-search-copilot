@@ -17,7 +17,12 @@
       "rules": {
         "no-restricted-imports": [
           "error",
-          { "patterns": [{ "group": ["**/repositories/listings"], "message": "listings is shared data with no userId; only the fetch job may import it, never a route." }] }
+          {
+            "patterns": [
+              { "group": ["**/repositories/listings"], "message": "listings is shared data with no userId; only the fetch job may import it, never a route." },
+              { "group": ["**/repositories/similarity"], "message": "similarity is job-only (it compares every user's resume) and has no userId; never import it from a route." }
+            ]
+          }
         ]
       }
     }

@@ -9,7 +9,8 @@ console.log(`Fetching boards into database "${rows[0].name}"...`);
 const summary = await fetchAllBoards();
 console.log(
   `Boards: ${summary.boardsFetched} fetched, ${summary.boardsFailed} failed. ` +
-    `Listings: ${summary.listingsSaved} saved, ${summary.postingsSkipped} postings skipped as unusable.`,
+    `Listings: ${summary.listingsSaved} saved, ${summary.postingsSkipped} postings skipped as unusable. ` +
+    `Closed: ${summary.listingsClosed} (${summary.closingSkipped} boards looked incomplete, nothing closed there).`,
 );
 await pool.end();
 // A non-zero exit lets a scheduler (and you) notice that some board failed.

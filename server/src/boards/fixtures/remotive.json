@@ -1,0 +1,46 @@
+{
+  "0-legal-notice": "Remotive API. Max 4 requests per day. Link back to the job URL and credit Remotive as the source.",
+  "job-count": 4,
+  "jobs": [
+    {
+      "id": 1901234,
+      "url": "https://remotive.com/remote-jobs/software-dev/senior-backend-engineer-1901234",
+      "title": "Senior Backend Engineer",
+      "company_name": "Acme Corp",
+      "company_logo": "https://remotive.com/job/1901234/logo",
+      "category": "Software Development",
+      "tags": ["python", "postgres"],
+      "job_type": "full_time",
+      "publication_date": "2026-11-20T09:15:00",
+      "candidate_required_location": "USA",
+      "salary": "$140k - $170k",
+      "description": "<p>We build <strong>payment</strong> tools.</p><ul><li>5+ years of Python</li><li>PostgreSQL</li></ul>"
+    },
+    {
+      "id": 1901235,
+      "url": "https://remotive.com/remote-jobs/design/product-designer-1901235",
+      "title": "Product Designer",
+      "company_name": "Globex",
+      "category": "Design",
+      "tags": [],
+      "job_type": "contract",
+      "publication_date": "2026-11-19T16:00:00",
+      "candidate_required_location": "",
+      "salary": "",
+      "description": "<p>Design things.</p>"
+    },
+    {
+      "id": 1901236,
+      "url": "http://remotive.com/remote-jobs/not-https",
+      "title": "Insecure link",
+      "company_name": "Initech",
+      "publication_date": "2026-11-19T16:00:00",
+      "candidate_required_location": "Worldwide",
+      "description": "<p>x</p>"
+    },
+    {
+      "id": 1901237,
+      "title": "Missing url and company"
+    }
+  ]
+}

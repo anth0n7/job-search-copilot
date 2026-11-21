@@ -1,6 +1,8 @@
 // What every provider's fetcher produces, so the rest of the app never sees provider-specific shapes.
 export type NormalizedListing = {
   external_id: string;
+  // Only for sources where one feed holds many companies (Remotive); a board's listings leave it out.
+  company_name?: string | null;
   title: string;
   location: string | null;
   url: string;
