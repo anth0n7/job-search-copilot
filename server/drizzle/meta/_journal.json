@@ -22,6 +22,20 @@
       "when": 1795032657352,
       "tag": "0002_reflective_madame_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795242213883,
+      "tag": "0003_steep_quicksilver",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795242884123,
+      "tag": "0004_breezy_moonstone",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, date, index, integer, pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import { type AnyPgColumn, boolean, check, date, index, integer, pgTable, primaryKey, real, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
 // The single source of truth for the database.
 // Property names are snake_case on purpose: they match the column names and the JSON the API sends
@@ -106,7 +106,10 @@ export const resumes = pgTable('resumes', {
 });
 
 export const BOARD_PROVIDERS = ['greenhouse', 'lever', 'ashby'] as const;
-const providerList = sql.raw(BOARD_PROVIDERS.map((p) => `'${p}'`).join(', '));
+// Remotive is not a company board: one feed holds many companies. It is stored as a board row anyway so it shares
+// the fetch status, the unique key and the closing logic, and each of its listings carries its own company_name.
+export const SOURCES = [...BOARD_PROVIDERS, 'remotive'] as const;
+const providerList = sql.raw(SOURCES.map((p) => `'${p}'`).join(', '));
 
 // Shared data: boards have no user_id because every user sees the same job listings (spec 3.8).
 // Only the fetcher touches these tables, never a user-facing route, so the ownership rule in owned.ts does not apply.
@@ -119,8 +122,12 @@ export const companyBoards = pgTable(
     board_token: text('board_token').notNull(),
     company_name: text('company_name').notNull(),
     last_fetched_at: timestamp('last_fetched_at', { withTimezone: true }),
+    // When a fetch was last started, successful or not. Remotive allows 4 requests a day, so the job checks this first.
+    last_attempt_at: timestamp('last_attempt_at', { withTimezone: true }),
     // A short fixed message, never raw error text or a reply body.
     last_fetch_error: text('last_fetch_error'),
+    // Consecutive fetches whose reply looked too small to trust; after 3 the daily job closes the missing listings anyway.
+    suspicious_streak: integer('suspicious_streak').notNull().default(0),
     created_at: createdAtColumn(),
   },
   (t) => [
@@ -140,6 +147,8 @@ export const listings = pgTable(
       .references(() => companyBoards.id, { onDelete: 'cascade' }),
     // The provider's own job id; with board_id it identifies a posting so a re-fetch updates it instead of duplicating it.
     external_id: text('external_id').notNull(),
+    // Only set for sources whose board holds many companies (Remotive); otherwise the board's company_name applies.
+    company_name: text('company_name'),
     title: text('title').notNull(),
     location: text('location'),
     url: text('url').notNull(),
@@ -149,8 +158,11 @@ export const listings = pgTable(
     posted_at: timestamp('posted_at', { withTimezone: true }),
     first_seen_at: timestamp('first_seen_at', { withTimezone: true }).notNull().defaultNow(),
     last_seen_at: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
-    // Set by the daily job (a later ticket) when a posting disappears from its board.
+    // Set by the daily job when a posting disappears from its board; cleared again if it reappears.
     closed_at: timestamp('closed_at', { withTimezone: true }),
+    // Set on a Remotive listing when a company board lists the same job (spec 3.4: the board's version wins).
+    // Discover hides listings where this is set. Recomputed by the daily job, so it never goes stale.
+    duplicate_of: integer('duplicate_of').references((): AnyPgColumn => listings.id, { onDelete: 'set null' }),
   },
   (t) => [
     // Longer than the 200 allowed for names: real job titles can be long, and one oversized title must not make a whole board's fetch fail.
@@ -160,5 +172,48 @@ export const listings = pgTable(
     uniqueIndex('listings_board_external_unique').on(t.board_id, t.external_id),
     // Discover lists open listings newest first.
     index('listings_open_newest_idx').on(t.closed_at, t.posted_at),
+    index('listings_duplicate_of_idx').on(t.duplicate_of),
   ],
+);
+
+// Shared, like listings: one embedding per listing, computed once by the daily job. Stored as a float array
+// (no pgvector): similarity is computed in code, so the database never has to search by vector.
+export const listingEmbeddings = pgTable('listing_embeddings', {
+  listing_id: integer('listing_id')
+    .primaryKey()
+    .references(() => listings.id, { onDelete: 'cascade' }),
+  // Numbers from different models cannot be compared, so the model is kept and a change triggers a re-embed.
+  model: text('model').notNull(),
+  // md5 of the text that was embedded (title + description), so an edited posting is re-embedded. Null = unknown, treated as stale.
+  text_hash: text('text_hash'),
+  embedding: real('embedding').array().notNull(),
+  created_at: createdAtColumn(),
+});
+
+// One embedding per resume. text_hash says which resume text it was made from, so an edited resume is re-embedded.
+export const resumeEmbeddings = pgTable('resume_embeddings', {
+  resume_id: integer('resume_id')
+    .primaryKey()
+    .references(() => resumes.id, { onDelete: 'cascade' }),
+  model: text('model').notNull(),
+  text_hash: text('text_hash').notNull(),
+  embedding: real('embedding').array().notNull(),
+  created_at: createdAtColumn(),
+});
+
+// Raw cosine similarity (about -1..1) between a resume and a listing; the 0-100 rescaling belongs to scoring (spec 4.1).
+// Tied to resumes, so it is removed with the resume (delete-my-data) and when the resume changes.
+export const listingSimilarities = pgTable(
+  'listing_similarities',
+  {
+    resume_id: integer('resume_id')
+      .notNull()
+      .references(() => resumes.id, { onDelete: 'cascade' }),
+    listing_id: integer('listing_id')
+      .notNull()
+      .references(() => listings.id, { onDelete: 'cascade' }),
+    cosine: real('cosine').notNull(),
+    created_at: createdAtColumn(),
+  },
+  (t) => [primaryKey({ columns: [t.resume_id, t.listing_id] }), index('listing_similarities_listing_id_idx').on(t.listing_id)],
 );

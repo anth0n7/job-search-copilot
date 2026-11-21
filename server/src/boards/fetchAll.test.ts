@@ -57,4 +57,20 @@ describe('fetchAllBoards', () => {
     expect(summary.boardsFailed).toBe(1);
     expect((await boardRow(board.id)).last_fetch_error).toBe(fetchErrors.unreadable);
   });
+
+  it('closes listings that left a board, but never when the board could not be fetched', async () => {
+    const board = await addBoard('greenhouse', 'acme');
+    const full = fixture('greenhouse');
+    const url = boardUrl('greenhouse', 'acme');
+    await fetchAllBoards(async () => full, vi.fn());
+
+    await fetchAllBoards(async () => {
+      throw new Error('down');
+    }, vi.fn());
+    expect((await db.select().from(listings).where(eq(listings.board_id, board.id))).filter((l) => l.closed_at)).toHaveLength(0);
+
+    const fewer = { ...full, jobs: full.jobs.slice(0, 2) };
+    const summary = await fetchAllBoards(async (u) => (u === url ? fewer : null), vi.fn());
+    expect(summary.listingsClosed).toBe(1);
+  });
 });

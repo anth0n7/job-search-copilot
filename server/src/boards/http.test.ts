@@ -28,6 +28,17 @@ describe('boardUrl', () => {
   });
 });
 
+describe('fetchBoardJson (Remotive)', () => {
+  it('accepts exactly Remotive\'s feed address and nothing else on remotive.com', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ jobs: [] }));
+    await expect(fetchBoardJson('https://remotive.com/api/remote-jobs')).resolves.toEqual({ jobs: [] });
+
+    for (const url of ['https://remotive.com/', 'https://remotive.com/api/remote-jobs/extra', 'https://remotive.com/api/remote-jobs?limit=5', 'https://remotive.com/other']) {
+      await expect(fetchBoardJson(url)).rejects.toThrow('not an approved job board address');
+    }
+  });
+});
+
 describe('fetchBoardJson', () => {
   it('returns the parsed JSON on success', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ jobs: [] }));
