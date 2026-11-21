@@ -19,8 +19,9 @@
           "error",
           {
             "patterns": [
-              { "group": ["**/repositories/listings"], "message": "listings is shared data with no userId; only the fetch job may import it, never a route." },
-              { "group": ["**/repositories/similarity"], "message": "similarity is job-only (it compares every user's resume) and has no userId; never import it from a route." }
+              { "group": ["**/repositories/listings*"], "message": "listings is shared data with no userId; only the fetch job may import it, never a route." },
+              { "group": ["**/repositories/similarity*"], "message": "similarity is job-only (it compares every user's resume) and has no userId; never import it from a route." },
+              { "group": ["**/embeddings", "**/embeddings/*", "**/boards", "**/boards/*", "**/runDailyJob*"], "message": "the fetch and embedding code is for the daily job only (it spends money and calls other servers); never import it from a route." }
             ]
           }
         ]

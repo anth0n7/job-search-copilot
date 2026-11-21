@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { cosine, voyageEmbedder } from './embedder';
+import { cosine, EmbeddingError, voyageEmbedder } from './embedder';
 
 describe('cosine', () => {
-  it('is 1 for the same direction at any length, 0 for unrelated, and 0 (not NaN) for an empty vector', () => {
+  it('is 1 for the same direction at any length, 0 for unrelated, and 0 (not NaN) for an all-zero vector', () => {
     expect(cosine([1, 2], [2, 4])).toBeCloseTo(1);
     expect(cosine([1, 0], [0, 1])).toBeCloseTo(0);
     expect(cosine([0, 0], [1, 1])).toBe(0);
@@ -44,5 +44,14 @@ describe('voyageEmbedder', () => {
 
     const wrongCount = voyageEmbedder('k', vi.fn().mockResolvedValue(reply({ data: [] })));
     await expect(wrongCount.embed(['x'], 'query')).rejects.toThrow('Embedding service reply was not understood');
+    await expect(wrongCount.embed(['x'], 'query')).rejects.toBeInstanceOf(EmbeddingError);
+  });
+
+  it('refuses a reply whose indexes repeat or are out of range', async () => {
+    const repeated = voyageEmbedder('k', vi.fn().mockResolvedValue(reply({ data: [{ index: 0, embedding: [1] }, { index: 0, embedding: [2] }] })));
+    await expect(repeated.embed(['a', 'b'], 'document')).rejects.toThrow('Embedding service reply was not understood');
+
+    const outOfRange = voyageEmbedder('k', vi.fn().mockResolvedValue(reply({ data: [{ index: 0, embedding: [1] }, { index: 5, embedding: [2] }] })));
+    await expect(outOfRange.embed(['a', 'b'], 'document')).rejects.toThrow('Embedding service reply was not understood');
   });
 });

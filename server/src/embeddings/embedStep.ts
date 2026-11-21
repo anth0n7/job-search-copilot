@@ -1,5 +1,7 @@
-import { cosine, type Embedder } from './embedder';
+import { errorCode } from '../errors';
+import { cosine, EmbeddingError, type Embedder } from './embedder';
 import {
+  dropEmbeddingsOfBlankResumes,
   embeddedResumes,
   listingsMissingSimilarity,
   listingsNeedingEmbedding,
@@ -23,7 +25,8 @@ const MAX_CHARS = 6000;
 const ROWS_PER_SIMILARITY_CHUNK = 500;
 
 // Cheap numbers for the daily job (spec 3.3): one embedding per listing (shared), one per resume, and the cosine of each
-// pair. No Claude call. Nothing here logs text, only counts.
+// pair. No Claude call. Logs are limited to counts, the fixed text of an EmbeddingError, and database error codes:
+// any other error (a Drizzle one in particular) can carry resume text or vectors.
 export async function runEmbeddingStep(embedder: Embedder, log: (message: string) => void = console.error, options: EmbedOptions = {}): Promise<EmbedSummary> {
   const { maxListings = 3000, batchSize = 32 } = options;
   const summary: EmbedSummary = { listingsEmbedded: 0, resumesEmbedded: 0, similaritiesSaved: 0, stoppedEarly: false };
@@ -31,9 +34,11 @@ export async function runEmbeddingStep(embedder: Embedder, log: (message: string
   // After one failed call the run stops: retrying a failing or rate-limited paid service in a loop costs money for nothing.
   // Whatever was saved before the failure stays, and tomorrow's run continues from there.
   try {
+    await dropEmbeddingsOfBlankResumes();
     for (const resume of await resumesNeedingEmbedding(embedder.model)) {
       const [vector] = await embedder.embed([resume.resume_text.slice(0, MAX_CHARS)], 'query');
-      await saveResumeEmbedding(resume.id, embedder.model, resume.hash, vector!);
+      if (!vector) throw new EmbeddingError('Embedding service returned no vector');
+      await saveResumeEmbedding(resume.id, embedder.model, resume.hash, vector);
       summary.resumesEmbedded++;
     }
 
@@ -41,11 +46,15 @@ export async function runEmbeddingStep(embedder: Embedder, log: (message: string
     for (let start = 0; start < pending.length; start += batchSize) {
       const batch = pending.slice(start, start + batchSize);
       const vectors = await embedder.embed(batch.map((l) => `${l.title}\n\n${l.description_text}`.slice(0, MAX_CHARS)), 'document');
-      await saveListingEmbeddings(embedder.model, batch.map((l, i) => ({ listing_id: l.id, embedding: vectors[i]! })));
+      if (vectors.length !== batch.length) throw new EmbeddingError('Embedding service returned the wrong number of vectors');
+      await saveListingEmbeddings(
+        embedder.model,
+        batch.map((l, i) => ({ listing_id: l.id, text_hash: l.text_hash, embedding: vectors[i] ?? [] })),
+      );
       summary.listingsEmbedded += batch.length;
     }
   } catch (err) {
-    log(`embedding stopped: ${err instanceof Error ? err.message : 'unknown error'}`);
+    log(err instanceof EmbeddingError ? `embedding stopped: ${err.message}` : `embedding stopped: unexpected error (database error ${errorCode(err) ?? 'none'})`);
     summary.stoppedEarly = true;
   }
 

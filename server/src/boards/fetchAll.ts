@@ -20,6 +20,8 @@ export type FetchSummary = {
   listingsClosed: number;
   // Boards whose reply looked too small to trust, so nothing was closed for them (see saveBoardListings).
   closingSkipped: number;
+  // Boards that looked incomplete 3 fetches in a row, so their missing listings were closed anyway.
+  closedAfterWarnings: number;
 };
 
 // Visits every board one after another (a few seconds in total is fine, and it keeps the load on the
@@ -29,7 +31,7 @@ export async function fetchAllBoards(
   fetchJson: (url: string) => Promise<unknown> = fetchBoardJson,
   log: (message: string) => void = console.error,
 ): Promise<FetchSummary> {
-  const summary: FetchSummary = { boardsFetched: 0, boardsFailed: 0, listingsSaved: 0, postingsSkipped: 0, listingsClosed: 0, closingSkipped: 0 };
+  const summary: FetchSummary = { boardsFetched: 0, boardsFailed: 0, listingsSaved: 0, postingsSkipped: 0, listingsClosed: 0, closingSkipped: 0, closedAfterWarnings: 0 };
 
   for (const board of await listBoards()) {
     const label = `${board.provider}/${board.board_token}`;
@@ -58,6 +60,10 @@ export async function fetchAllBoards(
     try {
       const saved = await saveBoardListings(board.id, parsed.listings);
       summary.listingsClosed += saved.closed;
+      if (saved.closedAfterRepeatedWarnings) {
+        summary.closedAfterWarnings++;
+        log(`${label}: reply looked incomplete 3 times in a row, so the missing listings were closed`);
+      }
       if (saved.closingSkipped) {
         summary.closingSkipped++;
         log(`${label}: reply looked incomplete (${parsed.listings.length} postings), nothing closed`);

@@ -4,6 +4,7 @@ import type { NormalizedListing } from '../boards/listing';
 import { db } from '../db';
 import { errorCode } from '../errors';
 import { companyBoards, listings } from '../schema';
+import { pool } from '../db';
 import { addBoards, claimFetchSlot, fetchErrors, markDuplicates, recordFetchFailure, saveBoardListings } from './listings';
 
 async function addBoard(board_token = 'acme') {
@@ -120,7 +121,7 @@ describe('closing listings that disappeared', () => {
 
     const result = await saveBoardListings(board.id, [posting('1'), posting('3')]);
 
-    expect(result).toEqual({ closed: 1, closingSkipped: false });
+    expect(result).toMatchObject({ closed: 1, closingSkipped: false });
     expect((await rowByExternalId(board.id, '2')).closed_at).not.toBeNull();
     expect((await rowByExternalId(board.id, '1')).closed_at).toBeNull();
   });
@@ -157,7 +158,7 @@ describe('closing listings that disappeared', () => {
 
     const result = await saveBoardListings(board.id, []);
 
-    expect(result).toEqual({ closed: 0, closingSkipped: true });
+    expect(result).toMatchObject({ closed: 0, closingSkipped: true });
     expect((await rowsFor(board.id)).filter((r) => r.closed_at)).toHaveLength(0);
     expect((await boardRow(board.id)).last_fetch_error).toBe(fetchErrors.incomplete);
   });
@@ -168,7 +169,7 @@ describe('closing listings that disappeared', () => {
 
     const result = await saveBoardListings(board.id, [...many(5), posting('new')]);
 
-    expect(result).toEqual({ closed: 0, closingSkipped: true });
+    expect(result).toMatchObject({ closed: 0, closingSkipped: true });
     expect((await rowsFor(board.id)).filter((r) => r.closed_at)).toHaveLength(0);
     expect(await rowsFor(board.id)).toHaveLength(21);
     expect((await boardRow(board.id)).last_fetch_error).toBe(fetchErrors.incomplete);
@@ -239,5 +240,130 @@ describe('markDuplicates', () => {
     await markDuplicates();
 
     expect((await rowByExternalId(rem.id, 'r1')).duplicate_of).toBeNull();
+  });
+});
+
+describe('markDuplicates (matching rules)', () => {
+  async function boards() {
+    const [gh] = await db.insert(companyBoards).values({ provider: 'greenhouse', board_token: 'acme', company_name: 'Acme Corp' }).returning();
+    const [rem] = await db.insert(companyBoards).values({ provider: 'remotive', board_token: 'remotive', company_name: 'Remotive' }).returning();
+    return { gh: gh!, rem: rem! };
+  }
+
+  it('ignores tabs, newlines and non-breaking spaces', async () => {
+    const { gh, rem } = await boards();
+    await saveBoardListings(gh.id, [posting('1', { title: 'Backend Engineer', location: 'Houston, TX' })]);
+    await saveBoardListings(rem.id, [posting('r1', { company_name: 'Acme\u00a0Corp', title: '\tBackend\n Engineer ', location: 'Houston,\u00a0TX' })]);
+
+    await markDuplicates();
+
+    expect((await rowByExternalId(rem.id, 'r1')).duplicate_of).not.toBeNull();
+  });
+
+  // Boards write remote locations many ways ("Remote - US", "United States (Remote)"); Remotive says "Remote - USA".
+  it('counts two remote locations as the same place when company and title match', async () => {
+    const { gh, rem } = await boards();
+    await saveBoardListings(gh.id, [
+      posting('1', { title: 'Backend Engineer', location: 'United States (Remote)' }),
+      posting('2', { title: 'Designer', location: 'Houston, TX' }),
+    ]);
+    await saveBoardListings(rem.id, [
+      posting('r1', { company_name: 'Acme Corp', title: 'Backend Engineer', location: 'Remote - USA' }),
+      posting('r2', { company_name: 'Acme Corp', title: 'Designer', location: 'Remote - USA' }),
+    ]);
+
+    await markDuplicates();
+
+    expect((await rowByExternalId(rem.id, 'r1')).duplicate_of).not.toBeNull();
+    // an on-site Houston job is not the same listing as a remote one
+    expect((await rowByExternalId(rem.id, 'r2')).duplicate_of).toBeNull();
+  });
+
+  it('rewrites only rows whose answer changed', async () => {
+    const { gh, rem } = await boards();
+    await saveBoardListings(gh.id, [posting('1', { title: 'Backend Engineer' })]);
+    await saveBoardListings(rem.id, [
+      posting('r1', { company_name: 'Acme Corp', title: 'Backend Engineer' }),
+      posting('r2', { company_name: 'Acme Corp', title: 'Other' }),
+    ]);
+
+    expect(await markDuplicates()).toBe(1);
+    expect(await markDuplicates()).toBe(0);
+  });
+
+  // A quadratic implementation (comparing every Remotive row with every board row) takes minutes at this size.
+  it('stays fast with thousands of listings', async () => {
+    const { gh, rem } = await boards();
+    await pool.query(
+      `insert into listings (board_id, external_id, title, location, url, description_text)
+       select $1, g, 'Job ' || g, 'Remote - US', 'https://example.com/' || g, 'x' from generate_series(1, 20000) g`,
+      [gh.id],
+    );
+    await pool.query(
+      `insert into listings (board_id, company_name, external_id, title, location, url, description_text)
+       select $1, 'Acme Corp', g, 'Job ' || (g * 3), 'Remote - USA', 'https://example.com/' || g, 'x' from generate_series(1, 3000) g`,
+      [rem.id],
+    );
+
+    const started = Date.now();
+    const changed = await markDuplicates();
+
+    expect(changed).toBe(3000);
+    expect(Date.now() - started).toBeLessThan(5000);
+  });
+});
+
+describe('closing safety rule that cannot stick forever', () => {
+  const batch = (prefix: string, count: number) => Array.from({ length: count }, (_, i) => posting(`${prefix}${i}`));
+
+  // The board keeps answering with only 5 of its 20 listings: the first replies are doubted, the third is believed.
+  it('closes the missing listings after 3 suspicious non-empty replies in a row, and says so', async () => {
+    const board = await addBoard();
+    await saveBoardListings(board.id, batch('a', 20));
+
+    const first = await saveBoardListings(board.id, batch('a', 5));
+    const second = await saveBoardListings(board.id, batch('a', 5));
+    expect([first.closed, second.closed]).toEqual([0, 0]);
+    expect(first.closingSkipped && second.closingSkipped).toBe(true);
+
+    const third = await saveBoardListings(board.id, batch('a', 5));
+    expect(third).toMatchObject({ closed: 15, closingSkipped: false, closedAfterRepeatedWarnings: true });
+    expect((await boardRow(board.id)).last_fetch_error).toBeNull();
+    expect((await boardRow(board.id)).suspicious_streak).toBe(0);
+  });
+
+  // A provider changing its id format: every old listing looks gone and every listing looks new.
+  it('recovers when a provider changes its id format', async () => {
+    const board = await addBoard();
+    await saveBoardListings(board.id, batch('old', 20));
+
+    await saveBoardListings(board.id, batch('new', 20));
+    await saveBoardListings(board.id, batch('new', 20));
+    await saveBoardListings(board.id, batch('new', 20));
+
+    const open = (await rowsFor(board.id)).filter((r) => !r.closed_at).map((r) => r.external_id);
+    expect(open).toHaveLength(20);
+    expect(open.every((id) => id.startsWith('new'))).toBe(true);
+  });
+
+  it('starts counting again after a normal fetch', async () => {
+    const board = await addBoard();
+    await saveBoardListings(board.id, batch('a', 20));
+    await saveBoardListings(board.id, batch('a', 5));
+    await saveBoardListings(board.id, batch('a', 5));
+    await saveBoardListings(board.id, batch('a', 20));
+
+    const next = await saveBoardListings(board.id, batch('a', 5));
+    expect(next.closingSkipped).toBe(true);
+  });
+
+  it('never closes on an empty reply, however many come in a row', async () => {
+    const board = await addBoard();
+    await saveBoardListings(board.id, batch('old', 20));
+
+    for (let i = 0; i < 5; i++) {
+      expect(await saveBoardListings(board.id, [])).toMatchObject({ closed: 0, closingSkipped: true });
+    }
+    expect((await rowsFor(board.id)).filter((r) => r.closed_at)).toHaveLength(0);
   });
 });

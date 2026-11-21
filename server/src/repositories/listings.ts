@@ -71,15 +71,20 @@ export async function addBoards(boards: { provider: (typeof BOARD_PROVIDERS)[num
 // thousands of long descriptions, so rows go in smaller groups, all inside one transaction.
 const CHUNK_SIZE = 200;
 
-export type SaveResult = { closed: number; closingSkipped: boolean };
+// A reply that looks too small to trust this many times in a row is believed (the board really did change).
+const SUSPICIOUS_REPLIES_BEFORE_CLOSING = 3;
+
+export type SaveResult = { closed: number; closingSkipped: boolean; closedAfterRepeatedWarnings: boolean };
 
 // Stores a board's listings, closes the ones that disappeared and marks the board as fetched, in one
 // transaction: if saving fails nothing is kept, so a board never looks fresh while its listings are missing.
 //
 // Closing safety rule: a reply that is empty, or that would close more than half of a board with 10 or more
 // open listings, is more likely a broken reply than a company closing everything. Then nothing is closed
-// (the new listings are still saved) and the board gets the "incomplete" message. A real mass closing is
-// picked up when the board shrinks again in smaller steps or is checked by hand.
+// (the new listings are still saved) and the board gets the "incomplete" message. A non-empty reply that looks
+// that way 3 fetches in a row is believed and the missing listings are closed (e.g. the provider changed its id
+// format, or the company really did close most of its jobs). An empty reply never closes anything, and does not
+// count towards the 3. A normal reply resets the count.
 export async function saveBoardListings(boardId: number, fetched: NormalizedListing[]): Promise<SaveResult> {
   // The same id twice in one insert makes Postgres refuse the statement; the last copy wins.
   const byExternalId = new Map(fetched.map((item) => [item.external_id, item]));
@@ -120,42 +125,76 @@ export async function saveBoardListings(boardId: number, fetched: NormalizedList
     const unseen = unseenRow?.count ?? 0;
 
     const suspicious = (rows.length === 0 && openBefore > 0) || (openBefore >= MIN_OPEN_FOR_DROP_CHECK && unseen > openBefore / 2);
+
+    const [streakRow] = await tx.select({ streak: companyBoards.suspicious_streak }).from(companyBoards).where(eq(companyBoards.id, boardId));
+    const previousStreak = streakRow?.streak ?? 0;
+    const streak = !suspicious ? 0 : rows.length === 0 ? previousStreak : previousStreak + 1;
+    const believed = suspicious && rows.length > 0 && streak >= SUSPICIOUS_REPLIES_BEFORE_CLOSING;
+
+    const skip = suspicious && !believed;
     let closed = 0;
-    if (!suspicious && unseen > 0) {
+    if (!skip && unseen > 0) {
       closed = (await tx.update(listings).set({ closed_at: sql`now()` }).where(unseenOpen).returning({ id: listings.id })).length;
     }
 
     await tx
       .update(companyBoards)
-      .set({ last_fetched_at: sql`now()`, last_fetch_error: suspicious ? fetchErrors.incomplete : null })
+      .set({ last_fetched_at: sql`now()`, last_fetch_error: skip ? fetchErrors.incomplete : null, suspicious_streak: believed ? 0 : streak })
       .where(eq(companyBoards.id, boardId));
-    return { closed, closingSkipped: suspicious };
+    return { closed, closingSkipped: skip, closedAfterRepeatedWarnings: believed };
   });
 }
 
 // Spec 3.4: the same company, title and location (ignoring capitals and spacing) is one job, and the company
-// board's version wins because it has the full text. Remotive listings that a company board also lists point at
+// board's version wins because it has the full text. Open Remotive listings that a company board also lists point at
 // it through duplicate_of; Discover hides those. Recomputed from scratch each run, so it follows boards closing
 // and reopening. Two board listings that match each other (a company on two boards) are not merged.
-export async function markDuplicates() {
-  const norm = (value: unknown) => sql`lower(regexp_replace(btrim(coalesce(${value}, '')), '\\s+', ' ', 'g'))`;
-  await db.execute(sql`
-    update listings r
-    set duplicate_of = (
-      select b.id
-      from listings b
-      join company_boards bb on bb.id = b.board_id
-      where bb.provider <> 'remotive'
-        and b.closed_at is null
-        and ${norm(sql`coalesce(b.company_name, bb.company_name)`)} = ${norm(sql`coalesce(r.company_name, rb.company_name)`)}
-        and ${norm(sql`b.title`)} = ${norm(sql`r.title`)}
-        and ${norm(sql`b.location`)} = ${norm(sql`r.location`)}
-      order by b.id
-      limit 1
+//
+// Each side's key is computed once and the two are joined, so the cost grows with the number of listings, not with
+// their product (the first version compared every pair and took ~60 ms per Remotive row). Only rows whose answer changes
+// are written. Returns how many rows changed.
+//
+// `materialized` stops Postgres from folding the CTEs into the join, where (without statistics) it picks a plan that
+// recomputes the keys for every pair.
+//
+// Locations: board and Remotive spell "remote" differently ("Remote - US", "United States (Remote)", "Remote - USA"), so
+// two locations that both mention remote count as the same place. Other locations must match after normalising.
+export async function markDuplicates(): Promise<number> {
+  const norm = (value: unknown) => sql`lower(btrim(regexp_replace(coalesce(${value}, ''), '[[:space:]\\u00a0]+', ' ', 'g')))`;
+  const place = (value: unknown) => sql`case when ${value} ~* 'remote' then 'remote' else ${norm(value)} end`;
+  const result = await db.execute(sql`
+    with board_keys as materialized (
+      select distinct on (company, title, place) company, title, place, id
+      from (
+        select b.id,
+               ${norm(sql`coalesce(b.company_name, bb.company_name)`)} as company,
+               ${norm(sql`b.title`)} as title,
+               ${place(sql`b.location`)} as place
+        from listings b
+        join company_boards bb on bb.id = b.board_id
+        where bb.provider <> 'remotive' and b.closed_at is null
+      ) keyed
+      order by company, title, place, id
+    ),
+    wanted as materialized (
+      select r.id, bk.id as board_listing_id
+      from (
+        select l.id,
+               ${norm(sql`coalesce(l.company_name, rb.company_name)`)} as company,
+               ${norm(sql`l.title`)} as title,
+               ${place(sql`l.location`)} as place
+        from listings l
+        join company_boards rb on rb.id = l.board_id
+        where rb.provider = 'remotive' and l.closed_at is null
+      ) r
+      left join board_keys bk on bk.company = r.company and bk.title = r.title and bk.place = r.place
     )
-    from company_boards rb
-    where rb.id = r.board_id and rb.provider = 'remotive'
+    update listings l
+    set duplicate_of = w.board_listing_id
+    from wanted w
+    where l.id = w.id and l.duplicate_of is distinct from w.board_listing_id
   `);
+  return result.rowCount ?? 0;
 }
 
 // Takes a key into fetchErrors, not text, so nothing but the fixed messages can be written.

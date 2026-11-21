@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { describe, expect, it, vi } from 'vitest';
 import { db } from '../db';
 import { companyBoards, listingEmbeddings, listings, listingSimilarities, resumeEmbeddings, resumes } from '../schema';
-import type { Embedder } from './embedder';
+import { EmbeddingError, type Embedder } from './embedder';
 import { runEmbeddingStep } from './embedStep';
 
 // A fake embedder (no paid call): a text's vector is how often it mentions each topic, so similarity is predictable.
@@ -103,7 +103,7 @@ describe('runEmbeddingStep', () => {
     const flaky: Embedder = {
       model: base.model,
       embed: async (texts, kind) => {
-        if (++call === 3) throw new Error('Embedding service answered 429');
+        if (++call === 3) throw new EmbeddingError('Embedding service answered 429');
         return base.embed(texts, kind);
       },
     };
@@ -137,5 +137,78 @@ describe('runEmbeddingStep', () => {
 
     expect(await db.select().from(resumeEmbeddings)).toHaveLength(0);
     expect(await db.select().from(listingSimilarities)).toHaveLength(0);
+  });
+
+  it('re-embeds a listing whose text was edited and drops its old similarity numbers', async () => {
+    const { add, resume } = await setup();
+    const job = await add('1', 'python');
+    await runEmbeddingStep(fakeEmbedder(), vi.fn());
+    const before = (await similarityOf(resume.id)).get(job.id)!;
+
+    await db.update(listings).set({ description_text: 'design design' }).where(eq(listings.id, job.id));
+    const summary = await runEmbeddingStep(fakeEmbedder(), vi.fn());
+
+    expect(summary.listingsEmbedded).toBe(1);
+    expect((await similarityOf(resume.id)).get(job.id)!).toBeLessThan(before);
+  });
+
+  it('drops the embedding and similarity numbers of a resume that was cleared', async () => {
+    const { add, resume } = await setup();
+    await add('1', 'python');
+    await runEmbeddingStep(fakeEmbedder(), vi.fn());
+
+    await db.update(resumes).set({ resume_text: '   ' }).where(eq(resumes.id, resume.id));
+    await runEmbeddingStep(fakeEmbedder(), vi.fn());
+
+    expect(await db.select().from(resumeEmbeddings)).toHaveLength(0);
+    expect(await db.select().from(listingSimilarities)).toHaveLength(0);
+  });
+
+  it('gives no similarity number to a listing that became a duplicate after it was embedded', async () => {
+    const { add, resume } = await setup();
+    const original = await add('1', 'python');
+    const copy = await add('2', 'python');
+    await runEmbeddingStep(fakeEmbedder(), vi.fn());
+    await db.delete(listingSimilarities);
+    await db.update(listings).set({ duplicate_of: original.id }).where(eq(listings.id, copy.id));
+
+    await runEmbeddingStep(fakeEmbedder(), vi.fn());
+
+    expect([...(await similarityOf(resume.id)).keys()]).toEqual([original.id]);
+  });
+
+  it('stops and saves nothing when the embedder returns the wrong number of vectors', async () => {
+    const { add } = await setup();
+    await add('1', 'python');
+    await add('2', 'design');
+    const short: Embedder = { model: 'fake-1', embed: async () => [[1, 0, 0]] };
+    const log = vi.fn();
+
+    const summary = await runEmbeddingStep(short, log);
+
+    expect(summary.stoppedEarly).toBe(true);
+    expect(await db.select().from(listingEmbeddings)).toHaveLength(0);
+  });
+
+  // A database error's own message contains the values of the query (resume text, vectors); only its code may be logged.
+  it('logs only the database error code, never query values, when saving fails', async () => {
+    const { resume } = await setup();
+    const log = vi.fn();
+    const deletesResumeMidRun: Embedder = {
+      model: 'fake-1',
+      embed: async (texts) => {
+        await db.delete(resumes).where(eq(resumes.id, resume.id));
+        return texts.map(() => [0.123456, 0.654321, 0]);
+      },
+    };
+
+    const summary = await runEmbeddingStep(deletesResumeMidRun, log);
+
+    expect(summary.stoppedEarly).toBe(true);
+    const logged = JSON.stringify(log.mock.calls);
+    expect(logged).toContain('23503');
+    expect(logged).not.toContain('0.123456');
+    expect(logged).not.toContain('python python developer');
+    expect(logged).not.toContain('insert into');
   });
 });

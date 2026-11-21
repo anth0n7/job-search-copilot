@@ -2,6 +2,10 @@ import { z } from 'zod';
 
 // The daily job only knows this shape, so tests use a fake and the paid provider can be swapped or capped
 // in one place.
+// The only error whose message is safe to log: its text is written here, never taken from a reply or a request.
+// Anything else thrown near an embedding (a Drizzle error, say) can contain resume text or vectors.
+export class EmbeddingError extends Error {}
+
 export type Embedder = {
   // Stored next to every embedding: numbers from different models cannot be compared.
   readonly model: string;
@@ -29,8 +33,8 @@ const VOYAGE_MODEL = 'voyage-4-lite';
 const voyageReply = z.object({ data: z.array(z.object({ index: z.number(), embedding: z.array(z.number()) })) });
 
 // Not exercised against the real service in this repo (no live calls from tests); its request and reply handling
-// is tested with a fake fetch. The key is only ever put in the Authorization header. Messages are fixed text
-// because Voyage's reply and our request both contain resume or posting text.
+// is tested with a fake fetch. The key is only ever put in the Authorization header. Errors are EmbeddingErrors with
+// fixed text, because Voyage's reply and our request both contain resume or posting text.
 export function voyageEmbedder(apiKey: string, fetchFn: typeof fetch = fetch): Embedder {
   return {
     model: VOYAGE_MODEL,
@@ -43,11 +47,18 @@ export function voyageEmbedder(apiKey: string, fetchFn: typeof fetch = fetch): E
         headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
         body: JSON.stringify({ input: texts, model: VOYAGE_MODEL, input_type: kind }),
       });
-      if (!res.ok) throw new Error(`Embedding service answered ${res.status}`);
+      if (!res.ok) throw new EmbeddingError(`Embedding service answered ${res.status}`);
 
       const parsed = voyageReply.safeParse(await res.json().catch(() => null));
-      if (!parsed.success || parsed.data.data.length !== texts.length) throw new Error('Embedding service reply was not understood');
-      return parsed.data.data.sort((x, y) => x.index - y.index).map((item) => item.embedding);
+      // Exactly one vector per input, with the indexes 0..n-1 each used once; otherwise a vector could be saved against the wrong text.
+      const vectors: (number[] | undefined)[] = new Array<number[] | undefined>(texts.length).fill(undefined);
+      if (parsed.success && parsed.data.data.length === texts.length) {
+        for (const item of parsed.data.data) {
+          if (Number.isInteger(item.index) && item.index >= 0 && item.index < texts.length && vectors[item.index] === undefined) vectors[item.index] = item.embedding;
+        }
+      }
+      if (!vectors.every((v): v is number[] => v !== undefined)) throw new EmbeddingError('Embedding service reply was not understood');
+      return vectors;
     },
   };
 }

@@ -4,7 +4,7 @@ Last updated 2026-11-21. The full design is in [docs/v2-spec.md](docs/v2-spec.md
 
 ## Where we stand
 
-Branch `v2`, at `e1713e6` (merge of PR #4: the job-listings ticket 3 + 4 is merged). Ticket 2 (dependency audit) is on branch `ticket-2-dependency-audit` (PR #5); ticket 5 (daily job) is on `ticket-5-daily-job`, stacked on it. Server: 149 tests passing; client: 30. Lint and typecheck clean in both.
+Branch `v2`, at `e1713e6` (merge of PR #4: the job-listings ticket 3 + 4 is merged). Ticket 2 (dependency audit) is on branch `ticket-2-dependency-audit` (PR #5); ticket 5 (daily job) is on `ticket-5-daily-job`, stacked on it. Server: 169 tests passing; client: 30. Lint and typecheck clean in both.
 
 ### Done
 
@@ -44,6 +44,9 @@ In the order agreed so far. The order after deployment is still open.
 5. **The rest:** Adzuna search (6), Save / Apply flow (13), guest mode (15), add company by link or name (16), delete my data (17), manual application (18), Adzuna company suggestions (20).
 
 ## Open questions and known gaps
+
+- **Storage growth (Neon free tier, not built):** each embedding is a 1024-float array (about 4 KB), plus one similarity row per resume and listing. Options when it matters: Voyage `output_dimension` 512 or 256, and pruning embeddings and similarity rows of listings closed for more than N days. Measure after the first real run.
+- **Remotive feed size and timeout are unverified:** the helper's 15 MB cap and 15 s timeout were chosen for the boards; the real Remotive reply (size, speed, the 24 h delay) has not been seen. With no retries a slow reply costs that day's Remotive fetch.
 
 - **Ticket 5 gaps:** the Voyage embedder has not run against the real service; the closing safety thresholds (10 listings, 50%) are starting values; Discover (ticket 7) must hide `duplicate_of` rows, show Remotive attribution, and decide how to treat Remotive jobs restricted to non-US locations; the cron route comes with deployment.
 

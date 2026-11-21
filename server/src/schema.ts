@@ -126,6 +126,8 @@ export const companyBoards = pgTable(
     last_attempt_at: timestamp('last_attempt_at', { withTimezone: true }),
     // A short fixed message, never raw error text or a reply body.
     last_fetch_error: text('last_fetch_error'),
+    // Consecutive fetches whose reply looked too small to trust; after 3 the daily job closes the missing listings anyway.
+    suspicious_streak: integer('suspicious_streak').notNull().default(0),
     created_at: createdAtColumn(),
   },
   (t) => [
@@ -182,6 +184,8 @@ export const listingEmbeddings = pgTable('listing_embeddings', {
     .references(() => listings.id, { onDelete: 'cascade' }),
   // Numbers from different models cannot be compared, so the model is kept and a change triggers a re-embed.
   model: text('model').notNull(),
+  // md5 of the text that was embedded (title + description), so an edited posting is re-embedded. Null = unknown, treated as stale.
+  text_hash: text('text_hash'),
   embedding: real('embedding').array().notNull(),
   created_at: createdAtColumn(),
 });
