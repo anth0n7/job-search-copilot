@@ -70,7 +70,7 @@ Phase 0 fixed the signed-out `Bearer null` requests, the raw database errors sen
 - The v1 AI features are gone, so the AI-related problems found earlier (unvalidated Claude replies, no spending limits, no loading state on the paid buttons, no prompt-injection defenses) are now **requirements for the v2 AI tickets** in `docs/v2-spec.md`, not bugs in this code.
 - Input validation is limited to blank-name checks; there is no schema-based validation of request bodies.
 - Route input checks are hand-written per route (`readXInput` functions); there is no schema-based validation library yet (Zod is planned).
-- `npm audit` reports vulnerable dependencies (see the dependency ticket in the spec).
+- `npm audit` (server) still reports 4 moderate dev-only findings from drizzle-kit's bundled esbuild; accepted, see CHANGELOG ticket 2. CI fails on high/critical production findings.
 
 ## Working style for this repo
 

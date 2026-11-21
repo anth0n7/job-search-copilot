@@ -10,6 +10,20 @@ One entry per ticket from [docs/v2-spec.md](docs/v2-spec.md) section 11, newest 
 - **Commit:** the commit message names this ticket
 -->
 
+## Ticket 2: dependency vulnerabilities (2026-11-21)
+- **What changed:** `npm audit fix` in both projects (lockfiles only, no `package.json` change, no major upgrades). CI now runs `npm audit --omit=dev --audit-level=high` in both jobs, right after `npm ci`.
+- **Why:** the audit reported 7 findings in the server and 2 in the client (the spec's list of 8 and 6 was from 2026-11-17 and has moved on).
+- **Findings and decisions:**
+  - `body-parser` (high, DoS from trailing bytes after a compressed body), `proxy-addr` (critical, IP spoofing through an IPv4-mapped IPv6 trust subnet), `qs` (moderate, parsing/stringify DoS): production dependencies of Express. Updated, not argued away: they are reachable from any request. We do not set `trust proxy` today, so the `proxy-addr` spoof was probably not exploitable yet, but it would be once the app sits behind Vercel/a proxy.
+  - Client `vite` (high, dev-server and `launch-editor` issues) and `source-map-js` (high, DoS through a crafted source map): build-time tools, only reachable while `npm run dev` runs on a developer machine. Updated anyway since the fix was a patch-level bump.
+  - Server `drizzle-kit` -> `@esbuild-kit/*` -> `esbuild@0.18.20` (moderate, any website can query the esbuild dev server): **not fixed, accepted.** It is dev-only, we never run esbuild's serve mode, and the only offered fix (`--force`) installs drizzle-kit 0.18.1, a downgrade. Revisit when drizzle-kit drops `@esbuild-kit`. The server audit still reports these 4 moderate findings (`npm audit`); production audit is clean.
+- **Decisions and assumptions:**
+  - CI threshold: fail on high or critical in production dependencies (`--omit=dev`). Dev-only findings are not gated because they do not ship and a new advisory in a build tool should not block unrelated PRs; they are read by hand at each ticket. Moderate production findings do not fail CI either, so look at the audit output occasionally.
+  - Consequence: `vite` is a client dev dependency, so its future advisories will not fail CI; the client gate only covers React and its libraries.
+  - A new advisory can make CI red with no code change; the answer is to run `npm audit fix` or document an exception here.
+  - Verified with `./check.sh` (green).
+- **Commit:** the commit message names ticket 2
+
 ## Ticket 3 + 4 (rest): curated boards and first real run (2026-11-19)
 - **What changed:** `server/data/boards.json` with 57 boards: 34 Greenhouse, 3 Lever, 20 Ashby (48 well-known US tech companies, approved by the owner, plus 9 found because they hire in Houston: Fervo Energy, Venus Aerospace, Bot Auto, ON.energy, Rugged Robotics, Sunnova, Pariveda, Directive, Base Power). Loaded into `jobtracker_v2` and fetched for real.
 - **Why:** steps 3 and 4 of the plan. Result: 57 of 57 boards fetched, 0 failed, 11,426 listings, 1 posting skipped as unusable, 148 listings with Houston in the location.
